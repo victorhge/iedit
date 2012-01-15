@@ -248,7 +248,8 @@ Commands:
   (interactive "P")
   (if iedit-mode
       (iedit-done)
-    (let ((occurrence nil))
+    (let (occurrence
+          occurrence-is-regexp-p)
       (cond ((and arg iedit-last-occurrence-in-history)
              (setq occurrence iedit-last-occurrence-in-history))
             ((and transient-mark-mode mark-active (not (equal (mark) (point))))
@@ -257,10 +258,13 @@ Commands:
              (setq occurrence (buffer-substring-no-properties (point) isearch-other-end))
              (isearch-exit))
             ((and iedit-current-word-default (current-word t))
-             (setq occurrence (current-word)))
+             (setq occurrence (regexp-quote (current-word))
+                   occurrence-is-regexp-p t))
             (t (error "No candidate of the occurrence, cannot enable iedit mode.")))
       (deactivate-mark)
-      (iedit-start occurrence))))
+      (iedit-start (if occurrence-is-regexp-p
+                       occurrence
+                     (regexp-quote occurrence))))))
 
 (defun iedit-start (occurrence-exp)
   "Start an iedit for the occurrence-exp in the current buffer."
@@ -277,7 +281,7 @@ Commands:
         (case-fold-search (not iedit-case-sensitive)))
   (save-excursion
     (goto-char (point-min))
-    (while (search-forward occurrence-exp nil t)
+      (while (search-forward-regexp occurrence-exp nil t)
       (push (iedit-make-occurrence-overlay (match-beginning 0) (match-end 0))
             iedit-occurrences-overlays)
       (setq counter (1+ counter)))      ; at less 1
