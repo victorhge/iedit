@@ -30,7 +30,7 @@
 ;; This package provides a more intuitive way of replace-string operation:
 ;;
 ;; - Select the occurrence in the buffer
-;;   In Transient Mark mode, just mark a region, the content of the 
+;;   In Transient Mark mode, just mark a region, the content of the
 ;;   region will be used as the occurrence. (if Transient Mark mode is disabled,
 ;;   using C-u C-x C-x or C-SPC C-SPC to activate it just for this one time).
 ;;
@@ -258,7 +258,9 @@ Commands:
              (setq occurrence (buffer-substring-no-properties (point) isearch-other-end))
              (isearch-exit))
             ((and iedit-current-word-default (current-word t))
-             (setq occurrence (regexp-quote (current-word))
+             (setq occurrence (concat "\\_<"
+                                      (regexp-quote (current-word))
+                                      "\\_>")
                    occurrence-is-regexp-p t))
             (t (error "No candidate of the occurrence, cannot enable iedit mode.")))
       (deactivate-mark)
@@ -288,8 +290,8 @@ Commands:
       (setq iedit-occurrences-overlays (nreverse iedit-occurrences-overlays))
       (if iedit-unmatched-lines-invisible
           (iedit-hide-unmatched-lines))
-      (message "%d matches for \"%s\"" 
-               counter 
+      (message "%d matches for \"%s\""
+               counter
                (if (> (length occurrence-exp) 50)
                    (concat (substring occurrence-exp 0 50) "...")
                  occurrence-exp)))))
@@ -318,8 +320,8 @@ Commands:
 (defun iedit-done ()
   "Exit iedit mode."
   (let ((ov (car iedit-occurrences-overlays)))
-    (if ov 
-        (setq iedit-last-occurrence-in-history 
+    (if ov
+        (setq iedit-last-occurrence-in-history
               (buffer-substring (overlay-start ov) (overlay-end ov)))))
   (remove-overlays (point-min) (point-max) iedit-occurrence-overlay-name t)
   (remove-overlays (point-min) (point-max) iedit-invisible-overlay-name t)
@@ -379,13 +381,13 @@ beginning of the buffer."
     (when in-occurrence
       (setq pos  (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
     (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
-    
+
     (if (/= pos (point-max))
         (setq iedit-forward-success t)
       (if (and iedit-forward-success in-occurrence)
           (progn (message "This is the last occurrence.")
                  (setq iedit-forward-success nil))
-        (progn 
+        (progn
           (if (get-char-property (point-min) 'iedit-occurrence-overlay-name)
               (setq pos (point-min))
             (setq pos (next-single-char-property-change (point-min) 'iedit-occurrence-overlay-name)))
@@ -408,12 +410,12 @@ the buffer."
     ;; At the start of the first occurrence
     (if (or (and (eq pos (point-min))
                  (not (get-char-property (point-min) 'iedit-occurrence-overlay-name)))
-            (and (eq (point) (point-min)) 
+            (and (eq (point) (point-min))
                  in-occurrence))
         (if (and iedit-forward-success in-occurrence)
             (progn (message "This is the first occurrence.")
                    (setq iedit-forward-success nil))
-          (progn 
+          (progn
             (setq pos (previous-single-char-property-change (point-max) 'iedit-occurrence-overlay-name))
             (if (not (get-char-property (- (point-max) 1) 'iedit-occurrence-overlay-name))
                 (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name)))
