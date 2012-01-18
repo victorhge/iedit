@@ -270,12 +270,17 @@ Commands:
       (cond ((and arg iedit-last-occurrence-in-history)
              (setq occurrence iedit-last-occurrence-in-history))
             ((and transient-mark-mode mark-active (not (equal (mark) (point))))
-             (setq occurrence (buffer-substring-no-properties (mark) (point))))
+             (setq occurrence (regexp-quote (buffer-substring-no-properties
+                                             (mark) (point)))))
             ((and isearch-mode (not (string= isearch-string "")))
-             (setq occurrence (buffer-substring-no-properties (point) isearch-other-end))
+             (setq occurrence (funcall (if isearch-regexp
+                                           'eval
+                                         'regexp-quote)
+                                       (buffer-substring-no-properties
+                                        (point) isearch-other-end)))
              (isearch-exit))
             ((and iedit-current-symbol-default (current-word t))
-             (setq occurrence (current-word))
+             (setq occurrence (regexp-quote (current-word)))
              (when iedit-only-at-symbol-boundaries
                (setq occurrence (concat "\\_<" (regexp-quote occurrence) "\\_>"))))
             (t (error "No candidate of the occurrence, cannot enable iedit mode.")))
