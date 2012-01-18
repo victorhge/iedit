@@ -257,18 +257,27 @@ You can also switch to iedit mode from isearch mode directly. The
 current search string is used as occurrence.  All occurrences of
 the current search string are highlighted.
 
-With a prefix argument, the occurrence when iedit is turned off
-last time is used as occurrence.  This is intended to recover
-last iedit which is turned off by mistake.
+With a universal prefix argument and no active region, the
+occurrence when iedit is turned off last time is used as
+occurrence.  This is intended to recover last iedit which is
+turned off by mistake.
+
+With a universal prefix argument and region active, interactively
+edit region as a string rectangle.
 
 Commands:
 \\{iedit-mode-map}"
   (interactive "P")
   (if iedit-mode
       (iedit-done)
-    (let ((occurrence nil))
-      (cond ((and arg iedit-last-occurrence-in-history)
+    (let (occurrence rect-string)
+      (cond ((and arg
+                  (not (use-region-p))
+                  iedit-last-occurrence-in-history)
              (setq occurrence iedit-last-occurrence-in-history))
+            ((and arg
+                  (use-region-p))
+             (setq rect-string t))
             ((and transient-mark-mode mark-active (not (equal (mark) (point))))
              (setq occurrence (regexp-quote (buffer-substring-no-properties
                                              (mark) (point)))))
@@ -284,8 +293,13 @@ Commands:
              (when iedit-only-at-symbol-boundaries
                (setq occurrence (concat "\\_<" (regexp-quote occurrence) "\\_>"))))
             (t (error "No candidate of the occurrence, cannot enable iedit mode.")))
-      (deactivate-mark)
-      (iedit-start occurrence))))
+      (if rect-string
+          (let ((beg (region-beginning))
+                (end (region-end)))
+            (deactivate-mark)
+            (iedit-rect-string (region-beginning) (region-end)))
+        (deactivate-mark)
+        (iedit-start occurrence)))))
 
 (defun iedit-start (occurrence-exp)
   "Start an iedit for the occurrence-exp in the current buffer."
@@ -314,6 +328,32 @@ Commands:
                (if (> (length occurrence-exp) 50)
                    (concat (substring occurrence-exp 0 50) "...")
                  occurrence-exp)))))
+
+(defun iedit-rect-string (beg end)
+  "Start an iedit for the region as a rectangle"
+  (setq iedit-mode " Iedit")
+  (setq iedit-occurrences-overlays nil)
+  (force-mode-line-update)
+  (run-hooks 'iedit-mode-hook)
+  ;; (add-hook 'mouse-leave-buffer-hook 'iedit-done)
+  (add-hook 'kbd-macro-termination-hook 'iedit-done)
+
+  (let ((orig-p (point))
+        (beg-col (progn (goto-char beg) (current-column)))
+        (end-col (progn (goto-char end) (current-column))))
+    (when (< end-col beg-col)
+      (rotatef beg-col end-col))
+    (goto-char beg)
+    (while (<= (point-at-eol) end)
+      (push (iedit-make-occurrence-overlay (progn
+                                             (move-to-column beg-col t)
+                                             (point))
+                                           (progn
+                                             (move-to-column end-col t)
+                                             (point)))
+            iedit-occurrences-overlays)
+      (forward-line 1))
+    (goto-char orig-p)))
 
 (defun iedit-hide-unmatched-lines ()
   "Hide unmatched lines using invisible overlay."
