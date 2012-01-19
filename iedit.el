@@ -267,7 +267,7 @@ edit region as a string rectangle.
 
 Commands:
 \\{iedit-mode-map}"
-  (interactive "P")
+  (interactive "*P")
   (if iedit-mode
       (iedit-done)
     (let (occurrence rect-string)
@@ -297,13 +297,13 @@ Commands:
           (let ((beg (region-beginning))
                 (end (region-end)))
             (deactivate-mark)
-            (iedit-rect-string (region-beginning) (region-end)))
+            (iedit-rectangle beg end))
         (deactivate-mark)
         (iedit-start occurrence)))))
 
 (defun iedit-start (occurrence-exp)
   "Start an iedit for the occurrence-exp in the current buffer."
-  (setq	iedit-mode " Iedit")
+  (setq	iedit-mode (propertize " Iedit" 'face 'font-lock-warning-face))
   (setq iedit-occurrences-overlays nil)
   (setq iedit-unmatched-lines-invisible iedit-unmatched-lines-invisible-default)
   (setq iedit-case-sensitive iedit-case-sensitive-default)
@@ -329,30 +329,31 @@ Commands:
                    (concat (substring occurrence-exp 0 50) "...")
                  occurrence-exp)))))
 
-(defun iedit-rect-string (beg end)
+(defun iedit-rectangle (beg end)
   "Start an iedit for the region as a rectangle"
-  (setq iedit-mode " Iedit")
+  (setq iedit-mode (propertize " Iedit-RECT" 'face 'font-lock-warning-face))
   (setq iedit-occurrences-overlays nil)
   (force-mode-line-update)
   (run-hooks 'iedit-mode-hook)
   ;; (add-hook 'mouse-leave-buffer-hook 'iedit-done)
   (add-hook 'kbd-macro-termination-hook 'iedit-done)
 
-  (let ((orig-p (point))
+  (let ((orig-p (point-marker))
         (beg-col (progn (goto-char beg) (current-column)))
         (end-col (progn (goto-char end) (current-column))))
     (when (< end-col beg-col)
       (rotatef beg-col end-col))
     (goto-char beg)
-    (while (<= (point-at-eol) end)
-      (push (iedit-make-occurrence-overlay (progn
-                                             (move-to-column beg-col t)
-                                             (point))
-                                           (progn
-                                             (move-to-column end-col t)
-                                             (point)))
-            iedit-occurrences-overlays)
-      (forward-line 1))
+    (loop do (progn
+               (push (iedit-make-occurrence-overlay (progn
+                                                      (move-to-column beg-col t)
+                                                      (point))
+                                                    (progn
+                                                      (move-to-column end-col t)
+                                                      (point)))
+                     iedit-occurrences-overlays)
+               (forward-line 1))
+          until (> (point) end))
     (goto-char orig-p)))
 
 (defun iedit-hide-unmatched-lines ()
@@ -412,22 +413,35 @@ occurrences if the user starts typing."
     (overlay-put unmatched-lines-overlay 'intangible t)
     unmatched-lines-overlay))
 
+;; `iedit-occurrence-update' gets called twice when change==0 and occurrence
+;; is zero-width
+;; -- for front and back insertion.
+(defvar iedit-last-overlay nil
+  "records processed overlay so they don't get processed multiple times.  See code.")
+(defun iedit-post-command-func ()
+  (remove-hook 'post-command-hook 'iedit-post-command-func t)
+  (setq iedit-last-overlay nil))
+
 (defun iedit-occurrence-update (occurrence after beg end &optional change)
   "Update all occurrences.
 This modification hook is triggered when a user edits any
 occurrence and is responsible for updating all other
 occurrences."
-  (when (and after (not undo-in-progress)) ; undo will do all the work
-    (let ((value (buffer-substring (overlay-start occurrence) (overlay-end occurrence)))
+  (when (and after
+             (not undo-in-progress)     ; undo will do all the work
+             (not (< beg (overlay-start occurrence)))
+             (not (eq occurrence iedit-last-overlay)))
+    (setq iedit-last-overlay occurrence)
+    (add-hook 'post-command-hook 'iedit-post-command-func nil t)
+    (let ((replacement-str (buffer-substring-no-properties beg end))
+          (index (- beg (overlay-start occurrence)))
           (inhibit-modification-hooks t))
       (save-excursion
         (dolist (like-occurrence iedit-occurrences-overlays)
-          (if (not (eq like-occurrence occurrence))
-              (progn
-                (goto-char (overlay-start like-occurrence))
-                (delete-region (overlay-start like-occurrence)
-                               (overlay-end like-occurrence))
-                (insert value))))))))
+          (when (not (eq like-occurrence occurrence))
+            (goto-char (+ index (overlay-start like-occurrence)))
+            (delete-region (point) (+ (point) change))
+            (insert replacement-str)))))))
 
 (defun iedit-next-occurrence ()
   "Move forward to the next occurrence in the `iedit'.
