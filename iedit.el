@@ -243,7 +243,7 @@ This is like `describe-bindings', but displays only Iedit keys."
 
 ;;; Define iedit mode map
 (defvar iedit-mode-map
-  (let ((map (make-sparse-key-map)))
+  (let ((map (make-sparse-keymap)))
     ;; Default key bindings
     (define-key map (kbd "TAB") 'iedit-next-occurrence)
     (define-key map (kbd "<S-tab>") 'iedit-prev-occurrence)
