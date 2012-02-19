@@ -297,6 +297,14 @@ This is like `describe-bindings', but displays only Iedit keys."
                    (if iedit-rectangle
                        " M-k:kill"))))
 
+(defun iedit-get-symbols-in-region (beg end)
+  (save-excursion
+    (save-restriction
+      (narrow-to-region beg end)
+      (goto-char (point-min))
+      (loop while (re-search-forward "\\_<\\(.*?\\)\\_>" nil t)
+            collect (match-string-no-properties 1)))))
+
 (or (assq 'iedit-mode minor-mode-map-alist)
     (setq minor-mode-map-alist
           (cons (cons 'iedit-mode iedit-mode-map) minor-mode-map-alist)))
@@ -332,21 +340,38 @@ turned off by mistake.
 With a universal prefix argument and region active, interactively
 edit region as a string rectangle.
 
+With universal prefix specified twice, e.g. C-u C-u, then you can
+choose to edit complete symbols within the region.  This is
+useful for code refactoring.
+
 Commands:
 \\{iedit-current-keymap}"
   (interactive "P")
   (if iedit-mode
       (iedit-done)
-    (let (occurrence complete-symbol rect-string)
-      (cond ((and arg
+    (let (occurrence complete-symbol rect-string restrict-beg restrict-end)
+      (cond ((and (equal arg '(4))
                   (or (not transient-mark-mode) (not mark-active)
                       (equal (mark) (point)))
                   iedit-last-occurrence-in-history)
              (setq occurrence iedit-last-occurrence-in-history)
              (setq complete-symbol iedit-occurrence-is-complete-symbol))
-            ((and arg
+            ((and (equal arg '(4))
                   transient-mark-mode mark-active (not (equal (mark) (point))))
              (setq rect-string t))
+            ((and (equal arg '(16))
+                  transient-mark-mode mark-active (not (equal (mark) (point))))
+             (setq occurrence (regexp-quote
+                               (completing-read
+                                "Symbol: "
+                                (iedit-get-symbols-in-region (region-beginning) (region-end))
+                                nil
+                                nil
+                                nil
+                                'iedit-read-symbol-hist))
+                   restrict-beg (region-beginning)
+                   restrict-end (region-end)
+                   complete-symbol t))
             ((and transient-mark-mode mark-active (not (equal (mark) (point))))
              (setq occurrence (regexp-quote (buffer-substring-no-properties
                                              (mark) (point)))))
@@ -367,7 +392,13 @@ Commands:
             (iedit-rectangle-start beg end))
         (deactivate-mark)
         (setq iedit-case-sensitive iedit-case-sensitive-default)
-        (iedit-start occurrence)))))
+        (if (and restrict-beg restrict-end)
+            (save-restriction
+              (narrow-to-region restrict-beg restrict-end)
+              (iedit-start occurrence)
+              (goto-char (point-min))
+              (iedit-next-occurrence))
+          (iedit-start occurrence))))))
 
 (defun iedit-start (occurrence-exp)
   "Start an iedit for the occurrence-exp in the current buffer."
