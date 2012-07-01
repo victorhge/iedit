@@ -17,8 +17,8 @@ Normal scenario of Iedit mode is like:
  - Finish - by pressing C-; again
 
 This package also provides rectangle support with *visible rectangle*
-highlighting, which is similar with cua mode rectangle support, but still quite
-different.
+highlighting, which is similar with cua mode rectangle support.  But it's
+lighter weight and uses iedit mechanisms.
 
 You can also use Iedit mode as a quick way to temporarily show only the
 buffer lines that match the current text being edited.  This gives you the
