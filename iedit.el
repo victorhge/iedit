@@ -125,6 +125,11 @@ For example, when invoking command `iedit-mode' on the \"in\" in the
   :type 'boolean
   :group 'iedit)
 
+(defcustom iedit-modify-global-map t
+  "If no-nil, map Iedit commands globally on load."
+  :type 'boolean
+  :group 'iedit)
+
 (defvar iedit-mode-hook nil
   "Function(s) to call after starting up an iedit.")
 
@@ -140,11 +145,12 @@ For example, when invoking command `iedit-mode' on the \"in\" in the
            (list '(iedit-mode iedit-mode))))
 
 ;;; Default key bindings:
-(define-key global-map (kbd "C-;") 'iedit-mode)
-(define-key isearch-mode-map (kbd "C-;") 'iedit-mode)
-(define-key esc-map (kbd "C-;") 'iedit-execute-last-modification)
-(define-key help-map (kbd "C-;") 'iedit-mode-on-function)
-(define-key global-map [C-return] 'iedit-rectangle-mode)
+(when iedit-modify-global-map
+  (define-key global-map (kbd "C-;") 'iedit-mode)
+  (define-key isearch-mode-map (kbd "C-;") 'iedit-mode)
+  (define-key esc-map (kbd "C-;") 'iedit-execute-last-modification)
+  (define-key help-map (kbd "C-;") 'iedit-mode-on-function)
+  (define-key global-map [C-return] 'iedit-rectangle-mode))
 
 (defvar iedit-last-initial-string-global nil
   "This is a global variable which is the last initial occurrence string.")
