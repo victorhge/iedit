@@ -2,10 +2,10 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2012-03-14 23:00:29 Victor Ren>
+;; Time-stamp: <2012-07-04 10:07:47 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
-;; Version: 0.95
+;; Version: 0.97
 ;; X-URL: http://www.emacswiki.org/emacs/Iedit
 ;; Compatibility: GNU Emacs: 22.x, 23.x, 24.x
 
@@ -149,7 +149,7 @@ For example, when invoking command `iedit-mode' on the \"in\" in the
   (define-key global-map (kbd "C-;") 'iedit-mode)
   (define-key isearch-mode-map (kbd "C-;") 'iedit-mode)
   (define-key esc-map (kbd "C-;") 'iedit-execute-last-modification)
-  (define-key help-map (kbd "C-;") 'iedit-mode-on-function)
+  (define-key help-map (kbd "C-;") 'iedit-mode-toggle-on-function)
   (define-key global-map [C-return] 'iedit-rectangle-mode))
 
 (defvar iedit-last-initial-string-global nil
@@ -371,6 +371,9 @@ This is like `describe-bindings', but displays only Iedit keys."
 (or (assq 'iedit-mode minor-mode-map-alist)
     (setq minor-mode-map-alist
           (cons (cons 'iedit-mode iedit-mode-map) minor-mode-map-alist)))
+;; Avoid to restore Iedit mode when restoring desktop
+(add-to-list 'desktop-minor-mode-handlers
+             '(iedit-mode . nil))
 
 ;;;###autoload
 (defun iedit-mode (&optional arg)
@@ -428,7 +431,9 @@ Commands:
       (iedit-mode-on-action arg)
     (let (occurrence
           complete-symbol
-          (beg (point-min))
+          (beg (if (eq major-mode 'occur-edit-mode) ; skip the first occurrence
+                   (next-single-char-property-change 1 'read-only)
+                 (point-min)))
           (end (point-max)))
       (cond ((and arg
                   (= 4 (prefix-numeric-value arg))
@@ -467,7 +472,7 @@ Commands:
       (iedit-start occurrence beg end))))
 
 ;;;###autoload
-(defun iedit-mode-on-function ()
+(defun iedit-mode-toggle-on-function ()
   "Toggle Iedit mode on current function."
   (interactive)
   (iedit-mode 0))
@@ -485,7 +490,7 @@ Commands:
           (iedit-rectangle-start beg end)))))
 
 (defun iedit-mode-on-action (&optional arg)
-  "Turn off Iedit mode or restrict it in a region."
+  "Turn off Iedit mode or restrict it in a region if region is active."
   (if (iedit-region-active)
       ;; Restrict iedit-mode
       (let ((beg (region-beginning))
@@ -504,7 +509,8 @@ Commands:
   (setq iedit-current-keymap iedit-occurrence-keymap)
   (iedit-refresh occurrence-exp beg end)
   (run-hooks 'iedit-mode-hook)
-  (add-hook 'kbd-macro-termination-hook 'iedit-done))
+  (add-hook 'kbd-macro-termination-hook 'iedit-done nil t)
+  (add-hook 'change-major-mode-hook 'iedit-done nil t))
 
 (defun iedit-refresh (occurrence-exp beg end)
   "Refresh Iedit mode."
@@ -562,7 +568,8 @@ Commands:
                     'face 'font-lock-warning-face))
   (force-mode-line-update)
   (run-hooks 'iedit-mode-hook)
-  (add-hook 'kbd-macro-termination-hook 'iedit-done))
+  (add-hook 'kbd-macro-termination-hook 'iedit-done nil t)
+  (add-hook 'change-major-mode-hook 'iedit-done nil t))
 
 (defun iedit-done ()
   "Exit Iedit mode.
@@ -584,7 +591,8 @@ the initial string globally."
   (setq iedit-before-modification-undo-list nil)
   (setq iedit-mode nil)
   (force-mode-line-update)
-  (remove-hook 'kbd-macro-termination-hook 'iedit-done)
+  (remove-hook 'kbd-macro-termination-hook 'iedit-done t)
+  (remove-hook 'change-major-mode-hook 'iedit-done t)
   (run-hooks 'iedit-mode-end-hook))
 
 (defun iedit-execute-last-modification (&optional arg)
@@ -683,8 +691,22 @@ occurrence, it will exit Iedit mode."
                 (if (eq 0 change)
                     (dolist (another-occurrence (remove occurrence iedit-occurrences-overlays))
                       (progn
-                        (goto-char (+ (overlay-start another-occurrence) offset))
-                        (insert-and-inherit value)))
+                        (let* ((beginning (+ (overlay-start another-occurrence) offset))
+                               (ending (+ beginning (- end beg))))
+                          (goto-char beginning)
+                          (insert-and-inherit value)
+                          ;; todo: reconsider this change
+                          ;; Quick fix for multi-occur  occur-edit-mode:
+                          ;; multi-occur depend on after-change-functions to
+                          ;; update original buffer. Since
+                          ;; inhibit-modification-hooks is set to non-nil,
+                          ;; after-change-functions hooks are not going to be
+                          ;; called for the changes of other occurrences.
+                          ;; So run the hook here.
+                          (run-hook-with-args 'after-change-functions
+                                              beginning
+                                              ending
+                                              change))))
                   ;; deletion
                   (dolist (another-occurrence (remove occurrence iedit-occurrences-overlays))
                     (let* ((beginning (+ (overlay-start another-occurrence) offset))
@@ -692,7 +714,11 @@ occurrence, it will exit Iedit mode."
                       (delete-region beginning ending)
                       (unless (eq beg end) ;; replacement
                         (goto-char beginning)
-                        (insert-and-inherit value)))))))))))))
+                        (insert-and-inherit value))
+                      (run-hook-with-args 'after-change-functions
+                                          beginning
+                                          ending
+                                          change))))))))))))
 
 (defun iedit-next-occurrence ()
   "Move forward to the next occurrence in the `iedit'.
@@ -703,7 +729,7 @@ beginning of the buffer."
   (let ((pos (point))
         (in-occurrence (get-char-property (point) 'iedit-occurrence-overlay-name)))
     (when in-occurrence
-      (setq pos  (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+      (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
     (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
     (if (/= pos (point-max))
         (setq iedit-forward-success t)
