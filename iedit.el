@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2012-08-09 15:12:50 Victor Ren>
+;; Time-stamp: <2012-08-13 11:15:18 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.97
@@ -1014,36 +1014,39 @@ After modification, conjointed overlays may be overlapped."
 (defvar iedit-number-line-counter 1
   "Occurrence number for 'iedit-number-occurrences.")
 
-(defun iedit-default-line-number-format (start-at)
+(defun iedit-default-occurrence-number-format (start-at)
   (concat "%"
           (int-to-string
            (length (int-to-string
                     (1- (+ (length iedit-occurrences-overlays) start-at)))))
           "d "))
 
-(defun iedit-number-occurrences (start-at &optional format)
+(defun iedit-number-occurrences (start-at &optional format-string)
   "Insert numbers in front of the occurrences.
 START-AT, if non-nil, should be a number from which to begin
 counting.  FORMAT, if non-nil, should be a format string to pass
-to `format' along with the line count.  When called interactively
-with a prefix argument, prompt for START-AT and FORMAT."
+to `format-string' along with the line count.  When called
+interactively with a prefix argument, prompt for START-AT and
+FORMAT."
   (interactive
    (if current-prefix-arg
        (let* ((start-at (read-number "Number to count from: " 1)))
          (list start-at
                (read-string "Format string: "
-                            (iedit-default-line-number-format
+                            (iedit-default-occurrence-number-format
                              start-at))))
      (list  1 nil)))
-  (unless format
-    (setq format (iedit-default-line-number-format start-at)))
-  (let ((iedit-number-line-counter start-at))
-    (iedit-apply-on-occurrences
-     (lambda (beg _end format-string)
-       (goto-char beg)
-       (insert (format format-string iedit-number-line-counter))
-       (setq iedit-number-line-counter
-             (1+ iedit-number-line-counter))) format)))
+  (unless format-string
+    (setq format-string (iedit-default-occurrence-number-format start-at)))
+  (let ((iedit-number-occurrence-counter start-at)
+        (inhibit-modification-hooks t))
+    (save-excursion
+      (dolist (occurrence iedit-occurrences-overlays)
+        (goto-char (overlay-start occurrence))
+        (insert (format format-string iedit-number-occurrence-counter))
+        (iedit-move-conjointed-overlays occurrence)
+        (setq iedit-number-occurrence-counter
+              (1+ iedit-number-occurrence-counter))))))
 
 (defun iedit-kill-rectangle(&optional fill)
   "Kill the rectangle.
