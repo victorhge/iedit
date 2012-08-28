@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2012-08-28 15:33:48 Victor Ren>
+;; Time-stamp: <2012-08-28 15:52:48 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.97
@@ -207,7 +207,7 @@ insertion against a zero-width occurrence.")
   "This is buffer local variable which indicates Iedit mode is aborting.")
 
 (defvar iedit-post-undo-hook-installed nil
-  "This is buffer local varialbe which indicated if
+  "This is buffer local variable which indicated if
   iedit-post-undo-hook is installed in `post-command-hook'.")
 
 (defvar iedit-buffering nil
@@ -621,7 +621,7 @@ Add the properties for the overlay: a face used to display a
 occurrence's default value, and modification hooks to update
 occurrences if the user starts typing."
   ;; Text inserted at the beginning and in the end is inside of the overlay.
-  ;; Conjointed occurrences might be overlapped after modification
+  ;; Conjoined occurrences might be overlapped after modification
   (let ((occurrence (make-overlay begin end (current-buffer) nil t)))
     (overlay-put occurrence iedit-occurrence-overlay-name t)
     (overlay-put occurrence 'face iedit-occurrence-face)
@@ -642,7 +642,7 @@ occurrences if the user starts typing."
 (defun iedit-post-undo-hook ()
   "Check if it is time to abort iedit.
 
-This is added to `post-command-hook' when undo command is excuted
+This is added to `post-command-hook' when undo command is executed
 in occurrences."
   (if (iedit-same-length)
       nil
@@ -685,7 +685,7 @@ occurrence, it will abort Iedit mode."
           (setq iedit-before-modification-string
                 (buffer-substring-no-properties beg end))
           ;; Check if this is called twice before modification. When inserting
-          ;; into zero-width occurrence or between two conjointed occurrecnes,
+          ;; into zero-width occurrence or between two conjoined occurrences,
           ;; both insert-in-front-hooks and insert-behind-hooks will be
           ;; called.  Two calls will make `iedit-skip-modification-once' true.
           (setq iedit-skip-modification-once (not iedit-skip-modification-once)))
@@ -722,7 +722,7 @@ occurrence, it will abort Iedit mode."
                                               beginning
                                               ending
                                               change))
-                        (iedit-move-conjointed-overlays another-occurrence)))
+                        (iedit-move-conjoined-overlays another-occurrence)))
                   ;; deletion
                   (dolist (another-occurrence (remove occurrence iedit-occurrences-overlays))
                     (let* ((beginning (+ (overlay-start another-occurrence) offset))
@@ -996,7 +996,7 @@ modification is not going to be applied to other occurrences."
                 (unless (eq beg end) ;; replacement
                   (goto-char beginning)
                   (insert-and-inherit modified-string))
-                (iedit-move-conjointed-overlays occurrence))))
+                (iedit-move-conjoined-overlays occurrence))))
           (goto-char (+ (overlay-start ov) offset))))))
   (setq iedit-buffering nil)
   ;; (setq iedit-mode (propertize
@@ -1007,16 +1007,16 @@ modification is not going to be applied to other occurrences."
   (message "Buffered modification applied.")
   (setq iedit-before-modification-undo-list nil))
 
-(defun iedit-move-conjointed-overlays (occurrence)
-  "This function keeps overlays conjointed after modification.
-After modification, conjointed overlays may be overlapped."
+(defun iedit-move-conjoined-overlays (occurrence)
+  "This function keeps overlays conjoined after modification.
+After modification, conjoined overlays may be overlapped."
   (let ((beginning (overlay-start occurrence))
         (ending (overlay-end occurrence)))
     (unless (= beginning (point-min))
       (let ((previous-overlay (iedit-find-overlay-at-point
                                (1- beginning)
                                'iedit-occurrence-overlay-name)))
-        (if previous-overlay ; two conjointed occurrences
+        (if previous-overlay ; two conjoined occurrences
             (move-overlay previous-overlay
                           (overlay-start previous-overlay)
                           beginning))))
@@ -1024,7 +1024,7 @@ After modification, conjointed overlays may be overlapped."
       (let ((next-overlay (iedit-find-overlay-at-point
                            ending
                            'iedit-occurrence-overlay-name)))
-        (if next-overlay ; two conjointed occurrences
+        (if next-overlay ; two conjoined occurrences
             (move-overlay next-overlay ending (overlay-end next-overlay)))))))
 
 (defvar iedit-number-line-counter 1
@@ -1060,7 +1060,7 @@ FORMAT."
       (dolist (occurrence iedit-occurrences-overlays)
         (goto-char (overlay-start occurrence))
         (insert (format format-string iedit-number-occurrence-counter))
-        (iedit-move-conjointed-overlays occurrence)
+        (iedit-move-conjoined-overlays occurrence)
         (setq iedit-number-occurrence-counter
               (1+ iedit-number-occurrence-counter))))))
 
