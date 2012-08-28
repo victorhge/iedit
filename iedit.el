@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2012-08-13 11:15:18 Victor Ren>
+;; Time-stamp: <2012-08-28 15:33:48 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.97
@@ -206,6 +206,10 @@ insertion against a zero-width occurrence.")
 (defvar iedit-aborting nil
   "This is buffer local variable which indicates Iedit mode is aborting.")
 
+(defvar iedit-post-undo-hook-installed nil
+  "This is buffer local varialbe which indicated if
+  iedit-post-undo-hook is installed in `post-command-hook'.")
+
 (defvar iedit-buffering nil
   "This is buffer local variable which indicates iedit-mode is
 buffering, which means the modification to the current occurrence
@@ -236,6 +240,7 @@ current mode is iedit-rect. Otherwise it is nil.
 (make-variable-buffer-local 'iedit-buffering)
 (make-variable-buffer-local 'iedit-rectangle)
 (make-variable-buffer-local 'iedit-current-keymap)
+(make-variable-buffer-local 'iedit-post-undo-hook-installed)
 (make-variable-buffer-local 'iedit-occurrence-context-lines)
 
 (defconst iedit-occurrence-overlay-name 'iedit-occurrence-overlay-name)
@@ -634,6 +639,17 @@ occurrences if the user starts typing."
     ;;    (overlay-put unmatched-lines-overlay 'intangible t)
     unmatched-lines-overlay))
 
+(defun iedit-post-undo-hook ()
+  "Check if it is time to abort iedit.
+
+This is added to `post-command-hook' when undo command is excuted
+in occurrences."
+  (if (iedit-same-length)
+      nil
+    (iedit-done))
+  (remove-hook 'post-command-hook 'iedit-post-undo-hook t)
+  (setq iedit-post-undo-hook-installed nil))
+
 (defun iedit-reset-aborting ()
   "Turning Iedit mode off and reset `iedit-aborting'.
 
@@ -654,9 +670,12 @@ This modification hook is triggered when a user edits any
 occurrence and is responsible for updating all other occurrences.
 Current supported edits are insertion, yank, deletion and
 replacement.  If this modification is going out of the
-occurrence, it will exit Iedit mode."
-  (when (and (not iedit-aborting )
-             (not undo-in-progress)) ; undo will do all the update
+occurrence, it will abort Iedit mode."
+  (if undo-in-progress
+      (when (not iedit-post-undo-hook-installed)
+        (add-hook 'post-command-hook 'iedit-post-undo-hook nil t)
+        (setq iedit-post-undo-hook-installed t))
+    (when (and (not iedit-aborting ))
     ;; before modification
     (if (null after)
         (if (or (< beg (overlay-start occurrence))
@@ -715,7 +734,7 @@ occurrence, it will exit Iedit mode."
                       (run-hook-with-args 'after-change-functions
                                           beginning
                                           ending
-                                          change))))))))))))
+                                          change)))))))))))))
 
 (defun iedit-next-occurrence ()
   "Move forward to the next occurrence in the `iedit'.
@@ -851,13 +870,10 @@ value of `iedit-occurrence-context-lines' is used for this time."
 ;;;; functions for overlay keymap
 (defun iedit-apply-on-occurrences (function &rest args)
   "Call function for each occurrence."
-  (let* ((ov (car iedit-occurrences-overlays))
-         (beg (overlay-start ov))
-         (end (overlay-end ov)))
-    (let ((inhibit-modification-hooks t))
+  (let ((inhibit-modification-hooks t))
       (save-excursion
-        (dolist (occurrence  iedit-occurrences-overlays)
-          (apply function (overlay-start occurrence) (overlay-end occurrence) args))))))
+        (dolist (occurrence iedit-occurrences-overlays)
+          (apply function (overlay-start occurrence) (overlay-end occurrence) args)))))
 
 (defun iedit-upcase-occurrences ()
   "Covert occurrences to upper case."
@@ -1101,6 +1117,20 @@ This function is supposed to be called in overlay keymap."
             (setq overlays (cdr overlays)))))
       same)))
 
+(defun iedit-same-length ()
+  "Return t if all occurrences are the same length."
+  (save-excursion
+    (let ((length (iedit-occurrence-string-length))
+          (overlays (cdr iedit-occurrences-overlays))
+          (same t))
+      (while (and overlays same)
+        (let ((ov (car overlays)))
+          (if (/= (- (overlay-end ov) (overlay-start ov))
+                  length)
+              (setq same nil)
+            (setq overlays (cdr overlays)))))
+      same)))
+
 ;; This function might be called out of any occurrence
 (defun iedit-current-occurrence-string ()
   "Return current occurrence string.
@@ -1112,6 +1142,11 @@ Return nil if occurrence string is empty string."
     (if (and ov (/=  beg end))
         (buffer-substring-no-properties beg end)
       nil)))
+
+(defun iedit-occurrence-string-length ()
+  "Return the length of current occurrence string."
+  (let ((ov (car iedit-occurrences-overlays)))
+    (- (overlay-end ov) (overlay-start ov))))
 
 (defun iedit-find-overlay (beg end property &optional exclusive)
   "Return a overlay with property in region, or out of the region if EXCLUSIVE is not nil."
