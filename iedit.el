@@ -330,7 +330,7 @@ Keymap used within overlays:
             (setq beg (region-beginning))
             (setq end (region-end)))))
       (setq iedit-only-complete-symbol-local complete-symbol)
-      (set-mark nil)
+      (deactivate-mark)
       (setq iedit-case-sensitive-local iedit-case-sensitive-default)
       (iedit-start occurrence beg end))))
 
