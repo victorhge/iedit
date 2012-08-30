@@ -45,9 +45,9 @@
   :group 'replace
   :group 'convenience)
 
-(defcustom iedit-occurrence-face 'highlight
+(defface iedit-occurrence
+  '((t :inherit highlight))
   "*Face used for the occurrences' default values."
-  :type 'face
   :group 'iedit)
 
 (defcustom iedit-case-sensitive-default t
@@ -238,7 +238,7 @@ occurrence's default value, and modification hooks to update
 occurrences if the user starts typing."
   (let ((occurrence (make-overlay begin end (current-buffer) nil t)))
     (overlay-put occurrence iedit-occurrence-overlay-name t)
-    (overlay-put occurrence 'face iedit-occurrence-face)
+    (overlay-put occurrence 'face 'iedit-occurrence)
     (overlay-put occurrence 'keymap keymap)
     (overlay-put occurrence 'insert-in-front-hooks '(iedit-occurrence-update))
     (overlay-put occurrence 'insert-behind-hooks '(iedit-occurrence-update))
