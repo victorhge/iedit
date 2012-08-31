@@ -97,7 +97,7 @@ Commands:
     (if (iedit-region-active)
         (let ((beg (region-beginning))
               (end (region-end)))
-          (set-mark nil)
+          (deactivate-mark)
           (iedit-rectangle-start beg end)))))
 
 (defun iedit-rectangle-start (beg end)
