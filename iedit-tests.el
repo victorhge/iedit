@@ -128,6 +128,25 @@ foo"
  123foo456123foo456
  123foo456")))))
 
+(ert-deftest iedit-overlay-at-end-of-buffer ()
+  (with-iedit-test-fixture
+   "foo
+foo"
+   (lambda ()
+     (iedit-mode)
+     (highlight-changes-mode 1)
+     (goto-char (point-min))
+     (goto-char (point-at-eol))
+     (iedit-mode)
+     (delete-region (point) (1- (point)))
+     (should (string= (buffer-string)
+                      "fo
+fo"))
+     (insert "b")
+     (should (string= (buffer-string)
+                      "fob
+fob")))))
+
 (ert-deftest iedit-mode-start-from-isearch-test ()
   (with-iedit-test-fixture
 "foo

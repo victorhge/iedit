@@ -384,7 +384,8 @@ occurrence, it will abort Iedit mode."
                         (insert-and-inherit value))
                       (run-hook-with-args 'after-change-functions
                                           beginning
-                                          ending
+                                          (min ending
+                                               (point-max))
                                           change)))))))))))))
 
 (defun iedit-next-occurrence ()
