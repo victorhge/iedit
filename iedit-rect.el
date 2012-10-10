@@ -104,8 +104,9 @@ Commands:
 (defun iedit-rectangle-start (beg end)
   "Start Iedit mode for the region as a rectangle."
   (barf-if-buffer-read-only)
+  (setq beg (copy-marker beg))
+  (setq end (copy-marker end t))
   (setq iedit-occurrences-overlays nil)
-  (setq iedit-rectangle (list beg end))
   (setq iedit-initial-string-local nil)
   (setq iedit-occurrence-keymap iedit-rect-keymap)
   (save-excursion
@@ -126,6 +127,7 @@ Commands:
                  (forward-line 1))
             until (> (point) end))
       (setq iedit-occurrences-overlays (nreverse iedit-occurrences-overlays))))
+  (setq iedit-rectangle (list beg end))
   (setq iedit-rectangle-mode (propertize
                     (concat " Iedit-rect:" (number-to-string (length iedit-occurrences-overlays)))
                     'face 'font-lock-warning-face))
