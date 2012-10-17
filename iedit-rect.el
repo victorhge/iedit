@@ -81,7 +81,7 @@ current mode is iedit-rect. Otherwise it is nil.
              '(iedit-rectangle-mode . nil))
 
 ;;;###autoload
-(defun iedit-rectangle-mode ()
+(defun iedit-rectangle-mode (&optional beg end)
   "Toggle Iedit-rect mode.
 
 When Iedit-rect mode is on, a rectangle is started with visible
@@ -90,16 +90,17 @@ Iedit mechanism.
 
 Commands:
 \\{iedit-rect-keymap}"
-  (interactive)
+  (interactive (when (iedit-region-active)
+                 (list (region-beginning)
+                       (region-end))))
   (if iedit-rectangle-mode
       (iedit-rectangle-done)
     (iedit-barf-if-lib-active)
-    (if (iedit-region-active)
-        (let ((beg (region-beginning))
-              (end (region-end)))
-          (setq mark-active nil)
-          (run-hooks 'deactivate-mark-hook)
-          (iedit-rectangle-start beg end)))))
+    (if (and beg end)
+        (progn (setq mark-active nil)
+               (run-hooks 'deactivate-mark-hook)
+               (iedit-rectangle-start beg end))
+      (error "no region available."))))
 
 (defun iedit-rectangle-start (beg end)
   "Start Iedit mode for the region as a rectangle."
