@@ -81,7 +81,7 @@ current mode is iedit-rect. Otherwise it is nil.
              '(iedit-rectangle-mode . nil))
 
 ;;;###autoload
-(defun iedit-rectangle-mode ()
+(defun iedit-rectangle-mode (&optional beg end)
   "Toggle Iedit-rect mode.
 
 When Iedit-rect mode is on, a rectangle is started with visible
@@ -90,22 +90,24 @@ Iedit mechanism.
 
 Commands:
 \\{iedit-rect-keymap}"
-  (interactive)
+  (interactive (when (iedit-region-active)
+                 (list (region-beginning)
+                       (region-end))))
   (if iedit-rectangle-mode
       (iedit-rectangle-done)
     (iedit-barf-if-lib-active)
-    (if (iedit-region-active)
-        (let ((beg (region-beginning))
-              (end (region-end)))
-          (setq mark-active nil)
-          (run-hooks 'deactivate-mark-hook)
-          (iedit-rectangle-start beg end)))))
+    (if (and beg end)
+        (progn (setq mark-active nil)
+               (run-hooks 'deactivate-mark-hook)
+               (iedit-rectangle-start beg end))
+      (error "no region available."))))
 
 (defun iedit-rectangle-start (beg end)
   "Start Iedit mode for the region as a rectangle."
   (barf-if-buffer-read-only)
+  (setq beg (copy-marker beg))
+  (setq end (copy-marker end t))
   (setq iedit-occurrences-overlays nil)
-  (setq iedit-rectangle (list beg end))
   (setq iedit-initial-string-local nil)
   (setq iedit-occurrence-keymap iedit-rect-keymap)
   (save-excursion
@@ -126,6 +128,7 @@ Commands:
                  (forward-line 1))
             until (> (point) end))
       (setq iedit-occurrences-overlays (nreverse iedit-occurrences-overlays))))
+  (setq iedit-rectangle (list beg end))
   (setq iedit-rectangle-mode (propertize
                     (concat " Iedit-rect:" (number-to-string (length iedit-occurrences-overlays)))
                     'face 'font-lock-warning-face))

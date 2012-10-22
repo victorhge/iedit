@@ -29,6 +29,7 @@
 
 ;;; Code:
 (require 'ert)
+(require 'test-util)
 (require 'iedit)
 (require 'iedit-rect)
 
@@ -37,20 +38,28 @@
     (should (byte-compile-file "iedit.el"))
     (delete-file "iedit.elc" nil)))
 
+(defmacro with-iedit-test-buffer (buffer-name &rest body)
+  (declare (indent 1) (debug t))
+  `(progn
+     (when (get-buffer ,buffer-name)
+       (kill-buffer ,buffer-name))
+     (with-current-buffer (get-buffer-create ,buffer-name)
+       ,@body)))
+
 (defun with-iedit-test-fixture (input-buffer-string body)
   "iedit test fixture"
   (let ((old-transient-mark-mode transient-mark-mode)
         (old-iedit-transient-sensitive iedit-transient-mark-sensitive))
     (unwind-protect
         (progn
-          (with-temp-buffer
+          (with-iedit-test-buffer "* iedit transient mark *"
             (transient-mark-mode t)
             (setq iedit-transient-mark-sensitive t)
             (insert input-buffer-string)
             (goto-char 1)
             (iedit-mode)
             (funcall body))
-          (with-temp-buffer
+          (with-iedit-test-buffer "* iedit NO transient mark *"
             (setq iedit-transient-mark-sensitive nil)
             (transient-mark-mode -1)
             (insert input-buffer-string)
@@ -363,7 +372,7 @@ fob")))))
      (goto-char 2)
      (set-mark-command nil)
      (goto-char 7)
-     (iedit-rectangle-mode)
+     (call-interactively 'iedit-rectangle-mode)
      (iedit-blank-occurrences)
      (should (string= (buffer-string) "f o
   oo barfoo foo")))))
@@ -424,8 +433,8 @@ fob")))))
    (set-mark-command nil)
    (forward-char 3)
    (forward-line 3)
-   (iedit-rectangle-mode)
-   (should (equal iedit-rectangle '(1 19))))))
+   (call-interactively 'iedit-rectangle-mode)
+   (should (equal (marker-position-list iedit-rectangle) '(1 19))))))
 
 (ert-deftest iedit-kill-rectangle-error-test ()
   (with-iedit-test-fixture
@@ -437,9 +446,9 @@ fob")))))
    (iedit-mode)
    (set-mark-command nil)
    (goto-char 22)
-   (iedit-rectangle-mode)
+   (call-interactively 'iedit-rectangle-mode)
    (should (iedit-same-column))
-   (should (equal iedit-rectangle '(1 22)))
+   (should (equal (marker-position-list iedit-rectangle) '(1 22)))
    (iedit-prev-occurrence)
    (delete-char -1)
    (should (not (iedit-same-column)))
@@ -455,9 +464,9 @@ fob")))))
    (iedit-mode)
    (set-mark-command nil)
    (goto-char 22)
-   (iedit-rectangle-mode)
+   (call-interactively 'iedit-rectangle-mode)
    (should (iedit-same-column))
-   (should (equal iedit-rectangle '(1 22)))
+   (should (equal (marker-position-list iedit-rectangle) '(1 22)))
    (iedit-kill-rectangle)
    (should (string= (buffer-string)
 "
@@ -465,6 +474,23 @@ o
 arfoo
  foo"))
  (should (equal killed-rectangle '("foo" " fo" "  b" "   "))))))
+
+(ert-deftest iedit-kill-rectangle-fill-extra-spaces ()
+  "lines within rectangle shorter than rectangle right column
+  should have spaces filled in."
+  (with-iedit-test-fixture
+   "foo
+ foo
+  barfoo
+    foo"
+   (lambda ()
+     (iedit-mode)
+     (setq indent-tabs-mode nil)
+     (set-mark-command nil)
+     (goto-word "barfoo")
+     (call-interactively 'iedit-rectangle-mode)
+     (should (iedit-same-column))
+     (should (equal '(1 27) (marker-position-list iedit-rectangle))))))
 
 (ert-deftest iedit-restrict-defun-test ()
   (with-iedit-test-fixture
