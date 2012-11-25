@@ -194,9 +194,10 @@ Return the number of occurrences."
     (save-excursion
       (goto-char beg)
       (while (re-search-forward occurrence-regexp end t)
-        (push (iedit-make-occurrence-overlay (match-beginning 0) (match-end 0))
-              iedit-occurrences-overlays)
-        (setq counter (1+ counter)))
+        (unless (text-property-not-all (match-beginning 0) (match-end 0) 'read-only nil)
+          (push (iedit-make-occurrence-overlay (match-beginning 0) (match-end 0))
+                iedit-occurrences-overlays)
+          (setq counter (1+ counter))))
       (message "%d matches for \"%s\"" counter (iedit-printable occurrence-regexp))
       (when (/= 0 counter)
         (setq iedit-occurrences-overlays (nreverse iedit-occurrences-overlays))
