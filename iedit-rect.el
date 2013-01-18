@@ -90,9 +90,7 @@ Iedit mechanism.
 
 Commands:
 \\{iedit-rect-keymap}"
-  (interactive (when (iedit-region-active)
-                 (list (region-beginning)
-                       (region-end))))
+  (interactive "r")
   (let (column-beg column-end)
     (save-excursion
       (goto-char beg) (setq column-beg (current-column))
