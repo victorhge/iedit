@@ -519,14 +519,18 @@ value of `iedit-occurrence-context-lines' is used for this time."
     (save-excursion
       (iedit-first-occurrence)
       (while (/= (point) (point-max))
-        (forward-line (- context-lines))
-        (let ((line-beginning (line-beginning-position)))
-          (if (> line-beginning prev-occurrence-end)
-              (push  (list prev-occurrence-end (1- line-beginning)) unmatched-lines)))
+        (let ((current-start (point)))
+          (forward-line (- context-lines))
+          (let ((line-beginning (line-beginning-position)))
+            (if (> line-beginning prev-occurrence-end)
+                (push  (list prev-occurrence-end (1- line-beginning)) unmatched-lines)))        
+          (goto-char current-start))
         ;; goto the end of the occurrence
         (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))
-        (forward-line context-lines)
-        (setq prev-occurrence-end (line-end-position))
+        (let ((current-end (point)))
+          (forward-line context-lines)
+          (setq prev-occurrence-end (1+ (line-end-position)))
+          (goto-char current-end))
         ;; goto the beginning of next occurrence
         (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
       (if (< prev-occurrence-end (point-max))
@@ -764,12 +768,14 @@ This function is supposed to be called in overlay keymap."
 (defun iedit-current-occurrence-string ()
   "Return current occurrence string.
 Return nil if occurrence string is empty string."
-  (let* ((ov (or (iedit-find-current-occurrence-overlay)
-                 (car iedit-occurrences-overlays)))
-         (beg (overlay-start ov))
-         (end (overlay-end ov)))
-    (if (and ov (/=  beg end))
-        (buffer-substring-no-properties beg end)
+  (let ((ov (or (iedit-find-current-occurrence-overlay)
+                 (car iedit-occurrences-overlays))))
+    (if ov
+        (let ((beg (overlay-start ov))
+              (end (overlay-end ov)))
+          (if (and ov (/=  beg end))
+              (buffer-substring-no-properties beg end)
+            nil))
       nil)))
 
 (defun iedit-occurrence-string-length ()

@@ -358,15 +358,18 @@ Keymap used within overlays:
   (if (or isearch-regexp isearch-word)
       nil
     (setq iedit-initial-string-local isearch-string))
-  (isearch-exit)
-  (setq mark-active nil)
-  (run-hooks 'deactivate-mark-hook)
-  (iedit-start regexp (point-min) (point-max))
-  ;; TODO: reconsider how to avoid the loop in iedit-same-length
-  (if (iedit-same-length)
-      nil
-    (iedit-done)
-    (message "Matches are not the same length.")))
+  (let ((iedit-case-sensitive (not isearch-case-fold-search)))
+    (isearch-exit)
+    (setq mark-active nil)
+    (run-hooks 'deactivate-mark-hook)
+    (iedit-start regexp (point-min) (point-max))
+    ;; TODO: reconsider how to avoid the loop in iedit-same-length
+    (cond ((not iedit-occurrences-overlays) 
+           (message "No matches found")
+           (iedit-done))
+          ((not (iedit-same-length))
+           (message "Matches are not the same length.")
+           (iedit-done)))))
 
 (defun iedit-start (occurrence-regexp beg end)
   "Start Iedit mode for the `occurrence-regexp' in the current buffer."
