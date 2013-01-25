@@ -773,7 +773,7 @@ Return nil if occurrence string is empty string."
     (if ov
         (let ((beg (overlay-start ov))
               (end (overlay-end ov)))
-          (if (and ov (/=  beg end))
+          (if (/=  beg end)
               (buffer-substring-no-properties beg end)
             nil))
       nil)))

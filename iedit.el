@@ -362,6 +362,8 @@ Keymap used within overlays:
     (isearch-exit)
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
+    (when iedit-mode
+      (iedit-cleanup))
     (iedit-start regexp (point-min) (point-max))
     ;; TODO: reconsider how to avoid the loop in iedit-same-length
     (cond ((not iedit-occurrences-overlays) 
