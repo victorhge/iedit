@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2013-01-18 17:24:41 Victor Ren>
+;; Time-stamp: <2013-01-31 23:57:54 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.97
@@ -126,7 +126,7 @@ Commands:
                           (point)))
                        iedit-occurrences-overlays)
                  (forward-line 1))
-            until (> (point) end))))
+            until (>= (point) end))))
   (setq iedit-rectangle (list beg end))
   (setq iedit-rectangle-mode (propertize
                     (concat " Iedit-rect:" (number-to-string (length iedit-occurrences-overlays)))

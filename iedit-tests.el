@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2013-01-19 22:18:17 Victor Ren>
+;; Time-stamp: <2013-02-01 00:10:47 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.97
 ;; X-URL: http://www.emacswiki.org/emacs/Iedit
@@ -473,7 +473,13 @@ fob")))))
      (forward-char 3)
      (forward-line 3)
      (call-interactively 'iedit-rectangle-mode)
-     (should (equal (marker-position-list iedit-rectangle) '(1 19))))))
+     (should (equal (marker-position-list iedit-rectangle) '(1 19)))
+     (call-interactively 'iedit-rectangle-mode)
+     (goto-char (point-min))
+     (set-mark-command nil)
+     (goto-char (point-max))
+     (call-interactively 'iedit-rectangle-mode)
+     (should (equal (marker-position-list iedit-rectangle) '(1 33))))))
 
 (ert-deftest iedit-kill-rectangle-error-test ()
   (with-iedit-test-fixture
