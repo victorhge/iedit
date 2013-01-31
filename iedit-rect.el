@@ -112,20 +112,25 @@ Commands:
   (setq iedit-occurrence-keymap iedit-rect-keymap)
   (save-excursion
     (let ((beg-col (progn (goto-char beg) (current-column)))
-          (end-col (progn (goto-char end) (current-column))))
+          (end-col (progn (goto-char end) (current-column)))
+          (doit (lambda ()
+                  (push (iedit-make-occurrence-overlay
+                         (progn
+                           (move-to-column beg-col t)
+                           (point))
+                         (progn
+                           (move-to-column end-col t)
+                           (point)))
+                        iedit-occurrences-overlays)
+                  (forward-line 1))))
       (when (< end-col beg-col)
         (rotatef beg-col end-col))
       (goto-char beg)
       (loop do (progn
-                 (push (iedit-make-occurrence-overlay
-                        (progn
-                          (move-to-column beg-col t)
-                          (point))
-                        (progn
-                          (move-to-column end-col t)
-                          (point)))
-                       iedit-occurrences-overlays)
-                 (forward-line 1))
+                 (funcall doit)
+                 (when (= (point) (point-max))
+                   (funcall doit)
+                   (return)))
             until (> (point) end))))
   (setq iedit-rectangle (list beg end))
   (setq iedit-rectangle-mode (propertize
