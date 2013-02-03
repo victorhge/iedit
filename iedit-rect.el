@@ -90,17 +90,19 @@ Iedit mechanism.
 
 Commands:
 \\{iedit-rect-keymap}"
-  (interactive (when (iedit-region-active)
-                 (list (region-beginning)
-                       (region-end))))
-  (if iedit-rectangle-mode
+  (interactive "r")
+  (let (column-beg column-end)
+    (save-excursion
+      (goto-char beg) (setq column-beg (current-column))
+      (goto-char end) (setq column-end (current-column)))
+    (if iedit-rectangle-mode
       (iedit-rectangle-done)
-    (iedit-barf-if-lib-active)
-    (if (and beg end)
-        (progn (setq mark-active nil)
-               (run-hooks 'deactivate-mark-hook)
-               (iedit-rectangle-start beg end))
-      (error "no region available."))))
+      (iedit-barf-if-lib-active)
+      (if (and beg end (not (eq column-beg column-end)))
+          (progn (setq mark-active nil)
+                 (run-hooks 'deactivate-mark-hook)
+                 (iedit-rectangle-start beg end))
+          (error "no rectangular region available.")))))
 
 (defun iedit-rectangle-start (beg end)
   "Start Iedit mode for the region as a rectangle."
