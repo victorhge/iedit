@@ -375,6 +375,10 @@ Keymap used within overlays:
 
 (defun iedit-start (occurrence-regexp beg end)
   "Start Iedit mode for the `occurrence-regexp' in the current buffer."
+
+  ;; enforce skip modification once, errors may happen to cause this to be
+  ;; unset.
+  (setq iedit-skip-modification-once t)
   (setq iedit-unmatched-lines-invisible iedit-unmatched-lines-invisible-default)
   (setq iedit-initial-region (list beg end))
   (iedit-start2 occurrence-regexp beg end)
