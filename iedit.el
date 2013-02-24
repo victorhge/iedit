@@ -393,6 +393,13 @@ Keymap used within overlays:
       (concat "\\_<" (regexp-quote exp) "\\_>")
     (regexp-quote exp)))
 
+(defun iedit-regexp-maybe-unquote (exp)
+  "Strip off the extra regexp characters that
+`iedit-regexp-quote' adds to a string."
+  (if iedit-only-complete-symbol-local
+      (substring exp 3 (- (length exp) 3))
+    exp))
+
 (defun iedit-start2 (occurrence-regexp beg end)
   "Refresh Iedit mode."
   (setq iedit-occurrence-keymap iedit-mode-occurrence-keymap)
