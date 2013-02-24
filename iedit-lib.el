@@ -838,17 +838,25 @@ Return nil if occurrence string is empty string."
 
 (defun iedit-printable (string)
   "Return a omitted substring that is not longer than 50.
-STRING is already `regexp-quote'ed"
-  (let ((first-newline-index (string-match "$" string))
-        (length (length string)))
+STRING is already `regexp-quote'ed.
+
+When  is non-nil, if extra characters were added to make this
+string only match symbols (i.e. if
+iedit-only-complete-symbol-local is non-nil) then strip those
+extra characters off."
+  (let* ((clean-string (if iedit-hide-added-symbol-regexp
+                           (iedit-regexp-maybe-unquote string)
+                         string))
+         (first-newline-index (string-match "$" clean-string))
+         (length (length clean-string)))
     (if (and first-newline-index
              (/= first-newline-index length))
         (if (< first-newline-index 50)
-            (concat (substring string 0 first-newline-index) "...")
-          (concat (substring string 0 50) "..."))
+            (concat (substring clean-string 0 first-newline-index) "...")
+          (concat (substring clean-string 0 50) "..."))
       (if (> length 50)
-          (concat (substring string 0 50) "...")
-        string))))
+          (concat (substring clean-string 0 50) "...")
+        clean-string))))
 
 (defun iedit-char-at-bol (&optional N)
   "Get char position of the beginning of the current line. If `N'
