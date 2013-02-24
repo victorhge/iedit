@@ -207,7 +207,8 @@ Return the number of occurrences."
         (case-fold-search (not iedit-case-sensitive)))
     (save-excursion
       (goto-char end)
-      (recenter)
+      (when iedit-auto-recenter
+        (recenter))
       (goto-char beg)
       (while (re-search-forward occurrence-regexp end t)
         (let ((beginning (match-beginning 0))

@@ -99,6 +99,11 @@ For example, when invoking command `iedit-mode' on the \"in\" in the
   :type 'vector
   :group 'iedit)
 
+(defcustom iedit-auto-recenter t
+  "Run `recenter' every time the overlay is re-drawn."
+  :type 'boolean
+  :group 'iedit)
+
 (defvar iedit-mode-hook nil
   "Function(s) to call after starting up an iedit.")
 
