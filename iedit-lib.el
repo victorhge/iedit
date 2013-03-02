@@ -850,6 +850,25 @@ STRING is already `regexp-quote'ed"
           (concat (substring string 0 50) "...")
         string))))
 
+(defun iedit-char-at-bol (&optional N)
+  "Get char position of the beginning of the current line. If `N'
+is given, move forward (or backward) that many lines (using
+`forward-line') and get the char position at the beginning of
+that line."
+  (save-excursion
+    (forward-line (if N N 0))
+    (point)))
+
+(defun iedit-char-at-eol (&optional N)
+  "Get char position of the end of the current line. If `N' is
+given, move forward (or backward) that many lines (using
+`forward-line') and get the char position at the end of that
+line."
+  (save-excursion
+    (forward-line (if N N 0))
+    (end-of-line)
+    (point)))
+
 (defun iedit-region-active ()
   "Return t if region is active and not empty.
 If variable `iedit-transient-mark-sensitive' is t, active region

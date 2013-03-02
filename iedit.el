@@ -132,6 +132,13 @@ Iedit mode is turned off last time.")
   "This is buffer local variable which is the initial region
 where Iedit mode is started from.")
 
+(defvar iedit-num-lines-to-expand-up 0
+  "This is a global variable indicating how many lines up from
+point should be included in the replacement region.")
+
+(defvar iedit-num-lines-to-expand-down 0
+  "This is a global variable indicating how many lines down from
+point should be included in the replacement region.")
 
 (make-variable-buffer-local 'iedit-mode)
 (make-variable-buffer-local 'iedit-only-complete-symbol-local)
@@ -223,6 +230,9 @@ This is like `describe-bindings', but displays only Iedit keys."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map iedit-occurrence-keymap-default)
     (define-key map (kbd "M-H") 'iedit-restrict-function)
+    (define-key map (kbd "M-I") 'iedit-restrict-current-line)
+    (define-key map (kbd "M-{") 'iedit-expand-up-a-line)
+    (define-key map (kbd "M-}") 'iedit-expand-down-a-line)
     (define-key map (kbd "M-G") 'iedit-apply-global-modification)
     (define-key map (kbd "M-C") 'iedit-toggle-case-sensitive)
     map)
@@ -414,6 +424,8 @@ the initial string globally."
   (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
   (setq iedit-last-occurrence-global iedit-last-occurrence-local)
   (setq iedit-last-initial-string-global iedit-initial-string-local)
+  (setq iedit-num-lines-to-expand-up 0)
+  (setq iedit-num-lines-to-expand-down 0)
 
   (iedit-cleanup)
 
@@ -501,6 +513,64 @@ the initial string globally."
     (iedit-restrict-region (region-beginning) (region-end) arg))
   (message "Restricted in current function, %d matches."
            (length iedit-occurrences-overlays)))
+
+(defun iedit-restrict-current-line ()
+  "Restrict Iedit mode to current line."
+  (interactive)
+  (iedit-restrict-region (iedit-char-at-bol) (iedit-char-at-eol))
+  (message "Restricted to current line, %d match%s."
+           (length iedit-occurrences-overlays)
+           (if (= 1 (length iedit-occurrences-overlays)) "" "es")))
+
+(defun iedit-expand-by-a-line (where amount)
+  "After restricting iedit to the current line with
+`iedit-restrict-current-line', this function expands the top or
+bottom of the search region upwards or downwards by `amount'
+lines. The region being acted upon is controlled with
+`where' ('top to act on the top, anything else for the
+bottom). With a prefix, collapses the top or bottom of the search
+region by `amount' lines."
+  (interactive "P")
+  ;; Since iedit-done resets iedit-num-lines-to-expand-{down,up}, we
+  ;; have to hang on to them in tmp variables
+  (let ((tmp-up iedit-num-lines-to-expand-up)
+        (tmp-down iedit-num-lines-to-expand-down)
+        ;; we want to call iedit-mode with a universal prefix arg
+        (current-prefix-arg '(4)))
+    (iedit-done)
+    (call-interactively 'iedit-mode)
+    (setq iedit-num-lines-to-expand-up tmp-up)
+    (setq iedit-num-lines-to-expand-down tmp-down)
+    (if (eq where 'top)
+        (setq iedit-num-lines-to-expand-up (max 0
+                                                (+ amount iedit-num-lines-to-expand-up)))
+      (setq iedit-num-lines-to-expand-down (max 0
+                                                (+ amount iedit-num-lines-to-expand-down))))
+    (iedit-restrict-region (iedit-char-at-bol (- iedit-num-lines-to-expand-up))
+                           (iedit-char-at-eol iedit-num-lines-to-expand-down))
+    (message "Now looking -%d/+%d lines around current line, %d match%s."
+             iedit-num-lines-to-expand-up
+             iedit-num-lines-to-expand-down
+             (length iedit-occurrences-overlays)
+             (if (= 1 (length iedit-occurrences-overlays)) "" "es"))))
+
+(defun iedit-expand-up-a-line (&optional arg)
+  "After restricting iedit to the current line with
+`iedit-restrict-current-line', this function expands the search
+region upwards by one line. With a prefix, bring the top of the
+region back down one line."
+  (interactive "P")
+  (iedit-expand-by-a-line 'top
+                          (if arg -1 1)))
+
+(defun iedit-expand-down-a-line (&optional arg)
+  "After restricting iedit to the current line with
+`iedit-restrict-current-line', this function expands the search
+region downwards by one line. With a prefix, bring the bottom of
+the region back up one line."
+  (interactive "P")
+  (iedit-expand-by-a-line 'bottom
+                          (if arg -1 1)))
 
 (defun iedit-restrict-region (beg end &optional inclusive)
   "Restricting Iedit mode in a region."

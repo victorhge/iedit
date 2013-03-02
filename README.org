@@ -35,6 +35,14 @@ Renaming refactoring is convinient in Iedit mode
  - Last renaming refactoring is remembered and can be applied to other buffers
    later
 
+ - Restricting the search area to just the current line can be done by
+   pressing M-I.
+
+ - Restricting the search area to the lines near the current line can
+   be done by pressing M-{ and M-}. These will expand the search
+   region one line at a time from the top and bottom. Add a prefix
+   argument to go the opposite direction.
+
 Iedit-rectangle-mode provides rectangle support with *visible rectangle*
 highlighting, which is similar with cua mode rectangle support.  But it's
 lighter weight and uses iedit mechanisms.
