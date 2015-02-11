@@ -185,6 +185,16 @@ is not applied to other occurrences when it is true.")
 It should be set before occurrence overlay is created.")
 (make-local-variable 'iedit-occurrence-keymap)
 
+(defcustom iedit-log-level 1
+  "Messages with logging level higher than this will be muted."
+  :type 'integer
+  :group 'iedit)
+
+(defun iedit-message (log-level format-string &rest args)
+  "Accounting for LOG-LEVEL, forward to (`message' FORMAT-STRING ARGS)."
+  (unless (> log-level iedit-log-level)
+    (apply #'message format-string args)))
+
 (defun iedit-help-for-occurrences ()
   "Display `iedit-occurrence-keymap-default'"
   (interactive)
@@ -257,7 +267,7 @@ Return the start position of the new occurrence if successful."
       (if (not (if forward
                    (re-search-forward occurrence-exp bound t)
                  (re-search-backward occurrence-exp bound t)))
-          (message "No more matches.")
+          (iedit-message "No more matches.")
         (setq pos (match-beginning 0))
         (if (or (iedit-find-overlay-at-point (match-beginning 0) 'iedit-occurrence-overlay-name)
                 (iedit-find-overlay-at-point (match-end 0) 'iedit-occurrence-overlay-name))
@@ -265,7 +275,7 @@ Return the start position of the new occurrence if successful."
         (push (iedit-make-occurrence-overlay (match-beginning 0)
                                              (match-end 0))
               iedit-occurrences-overlays)
-        (message "Add one match for \"%s\"." (iedit-printable occurrence-exp))
+        (iedit-message "Add one match for \"%s\"." (iedit-printable occurrence-exp))
         (when iedit-unmatched-lines-invisible
           (iedit-show-all)
           (iedit-hide-unmatched-lines iedit-occurrence-context-lines))
@@ -448,7 +458,7 @@ beginning of the buffer."
     (if (/= pos (point-max))
         (setq iedit-forward-success t)
       (if (and iedit-forward-success in-occurrence)
-          (progn (message "This is the last occurrence.")
+          (progn (iedit-message 1 "This is the last occurrence.")
                  (setq iedit-forward-success nil))
         (progn
           (if (get-char-property (point-min) 'iedit-occurrence-overlay-name)
@@ -457,7 +467,7 @@ beginning of the buffer."
                        (point-min)
                        'iedit-occurrence-overlay-name)))
           (setq iedit-forward-success t)
-          (message "Located the first occurrence."))))
+          (iedit-message 1 "Located the first occurrence."))))
     (when iedit-forward-success
       (goto-char pos))))
 
@@ -478,14 +488,14 @@ the buffer."
             (and (eq (point) (point-min))
                  in-occurrence))
         (if (and iedit-forward-success in-occurrence)
-            (progn (message "This is the first occurrence.")
+            (progn (iedit-message 1 "This is the first occurrence.")
                    (setq iedit-forward-success nil))
           (progn
             (setq pos (previous-single-char-property-change (point-max) 'iedit-occurrence-overlay-name))
             (if (not (get-char-property (- (point-max) 1) 'iedit-occurrence-overlay-name))
                 (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name)))
             (setq iedit-forward-success t)
-            (message "Located the last occurrence.")))
+            (iedit-message 1 "Located the last occurrence.")))
       (setq iedit-forward-success t))
     (when iedit-forward-success
       (goto-char pos))))
@@ -495,7 +505,7 @@ the buffer."
   (interactive)
   (goto-char (iedit-first-occurrence))
   (setq iedit-forward-success t)
-  (message "Located the first occurrence."))
+  (iedit-message 1 "Located the first occurrence."))
 
 (defun iedit-first-occurrence ()
   "return the position of the first occurrence."
@@ -509,7 +519,7 @@ the buffer."
   (interactive)
   (goto-char (iedit-last-occurrence))
   (setq iedit-forward-success t)
-  (message "Located the last occurrence."))
+  (iedit-message 1 "Located the last occurrence."))
 
 (defun iedit-last-occurrence ()
   "return the position of the last occurrence."
@@ -677,17 +687,17 @@ be applied to other occurrences when buffering is off."
   (if iedit-buffering
       (iedit-stop-buffering)
     (iedit-start-buffering))
-  (message (concat "Modification Buffering "
-                   (if iedit-buffering
-                       "started."
-                     "stopped."))))
+  (iedit-message 0 (concat "Modification Buffering "
+                           (if iedit-buffering
+                               "started."
+                             "stopped."))))
 
 (defun iedit-start-buffering ()
   "Start buffering."
   (setq iedit-buffering t)
   (setq iedit-before-modification-string (iedit-current-occurrence-string))
   (setq iedit-before-modification-undo-list buffer-undo-list)
-  (message "Start buffering editing..."))
+  (iedit-message 0 "Start buffering editing..."))
 
 (defun iedit-stop-buffering ()
   "Stop buffering and apply the modification to other occurrences.
@@ -718,7 +728,7 @@ modification is not going to be applied to other occurrences."
                 (iedit-move-conjoined-overlays occurrence))))
           (goto-char (+ (overlay-start ov) offset))))))
   (setq iedit-buffering nil)
-  (message "Buffered modification applied.")
+  (iedit-message 0 "Buffered modification applied.")
   (setq iedit-before-modification-undo-list nil))
 
 (defun iedit-move-conjoined-overlays (occurrence)

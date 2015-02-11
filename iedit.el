@@ -400,10 +400,10 @@ Keymap used within overlays:
     (iedit-start regexp (point-min) (point-max))
     ;; TODO: reconsider how to avoid the loop in iedit-same-length
     (cond ((not iedit-occurrences-overlays)
-           (message "No matches found for %s" regexp)
+           (iedit-message 0 "No matches found for %s" regexp)
            (iedit-done))
           ((not (iedit-same-length))
-           (message "Matches are not the same length.")
+           (iedit-message 0 "Matches are not the same length.")
            (iedit-done)))))
 
 (defun iedit-start (occurrence-regexp beg end)
@@ -581,7 +581,7 @@ the initial string globally."
            (string= iedit-initial-string-local iedit-last-initial-string-global)
            (not (string= iedit-last-initial-string-global iedit-last-occurrence-global)))
       (iedit-replace-occurrences iedit-last-occurrence-global)
-    (message "No global modification available.")))
+    (iedit-message 0 "No global modification available.")))
 
 (defun iedit-toggle-selection ()
   "Select or deselect the occurrence under point."
