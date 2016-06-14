@@ -87,6 +87,12 @@ isearch-mode-map, esc-map and help-map."
   :type 'vector
   :group 'iedit)
 
+(defcustom iedit-regexp-quote-function nil
+  "If non-nil, use this function to quote regexps when searching
+for occurrences."
+  :type 'function
+  :group 'iedit)
+
 (defvar iedit-mode-hook nil
   "Function(s) to call after starting up an iedit.")
 
@@ -429,9 +435,11 @@ Keymap used within overlays:
 
 (defun iedit-regexp-quote (exp)
   "Return a regexp string."
-  (if iedit-only-complete-symbol-local
-      (concat "\\_<" (regexp-quote exp) "\\_>")
-    (regexp-quote exp)))
+  (if (functionp iedit-regexp-quote-function)
+      (funcall iedit-regexp-quote-function exp)
+    (if iedit-only-complete-symbol-local
+        (concat "\\_<" (regexp-quote exp) "\\_>")
+      (regexp-quote exp))))
 
 (defun iedit-start2 (occurrence-regexp beg end)
   "Refresh Iedit mode."
