@@ -87,6 +87,14 @@ isearch-mode-map, esc-map and help-map."
   :type 'vector
   :group 'iedit)
 
+(defcustom iedit-hide-added-symbol-regexp nil
+  "If non-nil, when the search string is augmented to become a
+regexp to match only
+symbols (e.g. `iedit-only-complete-symbol-local' and friends)
+those extra characters to form said regexp are stripped off."
+  :type 'boolean
+  :group 'iedit)
+
 (defvar iedit-mode-hook nil
   "Function(s) to call after starting up an iedit.")
 
@@ -432,6 +440,13 @@ Keymap used within overlays:
   (if iedit-only-complete-symbol-local
       (concat "\\_<" (regexp-quote exp) "\\_>")
     (regexp-quote exp)))
+
+(defun iedit-regexp-maybe-unquote (exp)
+  "Strip off the extra regexp characters that
+`iedit-regexp-quote' adds to a string."
+  (if iedit-only-complete-symbol-local
+      (substring exp 3 (- (length exp) 3))
+    exp))
 
 (defun iedit-start2 (occurrence-regexp beg end)
   "Refresh Iedit mode."
