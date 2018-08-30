@@ -1,4 +1,7 @@
 * Iedit - Edit multiple regions in the same way simultaneously
+[[http://melpa.org/#/iedit][file:http://melpa.org/packages/iedit-badge.svg]]
+[[http://stable.melpa.org/#/iedit][file:http://stable.melpa.org/packages/iedit-badge.svg]]
+
 [[./iedit-demo.gif]]
 ** Introduction
 This package includes Emacs minor modes (iedit-mode and
