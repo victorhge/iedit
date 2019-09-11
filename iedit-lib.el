@@ -223,12 +223,14 @@ occurrence.")
     map)
   "Default keymap used within occurrence overlays.")
 
+;; The declarations are to avoid compile errors if mc is unknown by Emacs.
+(declare-function mc/create-fake-cursor-at-point "ext:mutiple-cursors-core.el" nil)
+(declare-function multiple-cursors-mode "ext:mutiple-cursors-core.el")
+(defvar mc/cmds-to-run-once)
+
 (when (require 'multiple-cursors-core nil t)
-  ;; The declarations are to avoid compile errors if mc is unknown by Emacs. 
-  (declare-function mc/create-fake-cursor-at-point "mutiple-cursor-core.el" nil)
-  (declare-function multiple-cursors-mode "mutiple-cursor-core.el")
   (defun iedit-switch-to-mc-mode ()
-    "Switch to multiple-cursors-mode.  So that you can navigate
+    "Switch to `multiple-cursors-mode'.  So that you can navigate
 out of the occurrence and edit simultaneously with multiple
 cursors."
     (interactive "*")
@@ -237,14 +239,12 @@ cursors."
 	   (offset (- (point) (overlay-start ov)))
 	   (master (point)))
       (save-excursion
-	(dolist (occurrence iedit-occurrences-overlays)
+        (dolist (occurrence iedit-occurrences-overlays)
 	  (goto-char (+ (overlay-start occurrence) offset))
 	  (unless (= master (point))
-	    (mc/create-fake-cursor-at-point))
-	  ))
+	    (mc/create-fake-cursor-at-point))))
       (run-hooks 'iedit-aborting-hook)
-      (multiple-cursors-mode 1)
-      ))
+      (multiple-cursors-mode 1)))
   ;; `multiple-cursors-mode' runs `post-command-hook' function for all the
   ;; cursors. `post-command-hook' is setup in `iedit-switch-to-mc-mode' So the
   ;; function is executed after `iedit-switch-to-mc-mode'. It is not expected.
