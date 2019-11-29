@@ -708,16 +708,16 @@ value of `iedit-occurrence-context-lines' is used for this time."
                        (overlay-start ov)
                        (overlay-end ov)))
          (to-string (if (not to-string)
-                      (read-string "Replace with: "
-                                 nil nil
-                                 from-string
-                                 nil)
+			(read-string "Replace with: "
+				     nil nil
+				     from-string
+				     nil)
                       to-string)))
     (iedit-apply-on-occurrences
      (lambda (beg end from-string to-string)
        (goto-char beg)
        (search-forward from-string end)
-       (replace-match to-string nil))
+       (replace-match to-string t))
      from-string to-string)
     (goto-char (+ (overlay-start ov) offset))))
 
