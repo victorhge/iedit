@@ -697,9 +697,9 @@ value of `iedit-occurrence-context-lines' is used for this time."
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'downcase-region))
 
+;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
-  "Replace occurrences with STRING.
-This function preserves case."
+  "Replace occurrences with STRING."
   (interactive "*")
   (iedit-barf-if-buffering)
   (let* ((ov (iedit-find-current-occurrence-overlay))
@@ -707,7 +707,6 @@ This function preserves case."
          (from-string (buffer-substring-no-properties
                        (overlay-start ov)
                        (overlay-end ov)))
-         (from-string-lowercase (downcase from-string))
          (to-string (if (not to-string)
                       (read-string "Replace with: "
                                  nil nil
@@ -715,11 +714,11 @@ This function preserves case."
                                  nil)
                       to-string)))
     (iedit-apply-on-occurrences
-     (lambda (beg end from-string-lowercase to-string)
+     (lambda (beg end from-string to-string)
        (goto-char beg)
-       (search-forward from-string-lowercase end)
+       (search-forward from-string end)
        (replace-match to-string nil))
-     from-string-lowercase to-string)
+     from-string to-string)
     (goto-char (+ (overlay-start ov) offset))))
 
 (defun iedit-blank-occurrences()
