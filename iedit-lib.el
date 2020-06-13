@@ -214,6 +214,7 @@ occurrence.")
     (define-key map (kbd "M-SPC") 'iedit-blank-occurrences)
     (define-key map (kbd "M-D") 'iedit-delete-occurrences)
     (define-key map (kbd "M-N") 'iedit-number-occurrences)
+    (define-key map (kbd "M-V") 'iedit-increment-occurences)
     (define-key map (kbd "M-B") 'iedit-toggle-buffering)
     (define-key map (kbd "M-<") 'iedit-goto-first-occurrence)
     (define-key map (kbd "M->") 'iedit-goto-last-occurrence)
@@ -689,13 +690,26 @@ value of `iedit-occurrence-context-lines' is used for this time."
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'upcase-region))
 
-
-
 (defun iedit-downcase-occurrences()
   "Covert occurrences to lower case."
   (interactive "*")
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'downcase-region))
+
+(defun iedit-increment-occurences ()
+  "Replace placeholder \"\\#\" by number incremented in each occurrence."
+  (interactive "*")
+  (iedit-barf-if-buffering)
+  (let ((inhibit-modification-hooks t))
+    (save-excursion
+      (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
+               for counter from 1
+               for beg = (overlay-start occurrence)
+               for end = (overlay-end occurrence)
+               do (progn
+                    (goto-char beg)
+                    (when (re-search-forward "\\\\#" end t)
+                      (replace-match (format "%03d" counter) t)))))))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
