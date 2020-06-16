@@ -697,7 +697,7 @@ value of `iedit-occurrence-context-lines' is used for this time."
   (iedit-apply-on-occurrences 'downcase-region))
 
 (defun iedit-increment-occurences ()
-  "Replace placeholder \"\\#\" by number incremented in each occurrence."
+  "Replace placeholder \"\\#\" by incremented number in each occurrence."
   (interactive "*")
   (iedit-barf-if-buffering)
   (let ((inhibit-modification-hooks t))
