@@ -99,6 +99,12 @@ the traverse of the long `iedit-occurrences-overlays' list."
   :type 'integer
   :group 'iedit)
 
+(defcustom iedit-increment-format-string "%03d"
+  "Format string used to format incremented numbers.
+This is used by `iedit-increment-occurences'."
+  :type 'string
+  :group 'iedit)
+
 (defvar iedit-occurrences-overlays nil
   "The occurrences slot contains a list of overlays used to
 indicate the position of each editable occurrence.  In addition, the
@@ -696,11 +702,17 @@ value of `iedit-occurrence-context-lines' is used for this time."
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'downcase-region))
 
-(defun iedit-increment-occurences ()
-  "Replace placeholder \"\\#\" by incremented number in each occurrence."
-  (interactive "*")
+(defun iedit-increment-occurences (&optional arg)
+  "Replace placeholder \"\\#\" by incremented number in each occurrence.
+Called with a prefix arg, allow editing the format string used, which
+default to `iedit-increment-format-string'."
+  (interactive "*P")
   (iedit-barf-if-buffering)
-  (let ((inhibit-modification-hooks t))
+  (let ((inhibit-modification-hooks t)
+        (fmt-str (if arg
+                     (read-string "Format incremented numbers: "
+                                  iedit-increment-format-string)
+                   iedit-increment-format-string)))
     (save-excursion
       (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
                for counter from 1
@@ -709,7 +721,7 @@ value of `iedit-occurrence-context-lines' is used for this time."
                do (progn
                     (goto-char beg)
                     (when (re-search-forward "\\\\#" end t)
-                      (replace-match (format "%03d" counter) t)))))))
+                      (replace-match (format fmt-str counter) t)))))))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
