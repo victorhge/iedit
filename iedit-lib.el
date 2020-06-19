@@ -710,8 +710,10 @@ default to `iedit-increment-format-string'."
   (iedit-barf-if-buffering)
   (let ((inhibit-modification-hooks t)
         (fmt-str (if arg
-                     (read-string "Format incremented numbers: "
-                                  iedit-increment-format-string)
+                     (read-string
+                      (format "Format incremented numbers (default '%s'): "
+                              iedit-increment-format-string)
+                      nil nil iedit-increment-format-string)
                    iedit-increment-format-string)))
     (save-excursion
       (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
