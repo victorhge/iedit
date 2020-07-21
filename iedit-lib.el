@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-21 11:54:31 Victor Ren>
+;; Time-stamp: <2020-07-21 15:03:28 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -179,6 +179,12 @@ occurrence.")
 (defvar iedit-after-change-list nil
   "Used to store the modifications in the command being run.")
 
+(defvar iedit-updating nil
+  "Used to prevent recursive calling change hooks.
+It replaces `inhibit-modification-hooks' which prevents calling
+`after-change-functions'.")
+
+(make-variable-buffer-local 'iedit-updating)
 (make-variable-buffer-local 'iedit-after-change-list)
 (make-variable-buffer-local 'iedit-occurrences-overlays)
 (make-variable-buffer-local 'iedit-read-only-occurrences-overlays)
@@ -480,7 +486,7 @@ replacement.  If this modification is going out of the
 occurrence, it will abort Iedit mode."
   (if undo-in-progress
       ;; If the "undo" change make occurrences different, it is going to mess up
-      ;; occurrences.  So a check will be done after undo command is executed.
+      ;; occurrences.  So a length check will be done after undo command is executed.
       (when (not iedit-post-undo-hook-installed)
         (add-hook 'post-command-hook 'iedit-post-undo nil t)
         (setq iedit-post-undo-hook-installed t))
@@ -499,11 +505,11 @@ occurrence, it will abort Iedit mode."
 			;; called.  Two calls will make `iedit-skip-modification-once' true.
 			(setq iedit-skip-modification-once (not iedit-skip-modification-once)))
 		;; after modification
-		(when (not iedit-buffering)
-          (if iedit-skip-modification-once
-              ;; Skip the first hook
-              (setq iedit-skip-modification-once nil)
-			(setq iedit-skip-modification-once t)
+        (if iedit-skip-modification-once
+            ;; Skip the first hook
+            (setq iedit-skip-modification-once nil)
+		  (setq iedit-skip-modification-once t)
+		  (when (and (not iedit-buffering) (not iedit-updating))
 			(when (or (eq 0 change) ;; insertion
                       (eq beg end)  ;; deletion
                       (not (string= iedit-before-modification-string ;; replacement
@@ -545,7 +551,7 @@ part to apply it to all the other occurrences."
 (defun iedit-update-occurrences-3 (occurrence beg end &optional change)
   "The third part of updateing occurrences.
 Apply the change to all the other occurrences. "
-  (let ((inhibit-modification-hooks t)
+  (let ((iedit-updating t)
         (offset (- beg (overlay-start occurrence)))
         (value (buffer-substring-no-properties beg end)))
     (save-excursion
@@ -556,17 +562,7 @@ Apply the change to all the other occurrences. "
 				(when change (delete-region beginning (+ beginning change))) ;; delete
 				(when (/= beg end) ;; insert
 				  (goto-char beginning)
-				  (insert-and-inherit value))
-                ;; todo: reconsider this change Quick fix for multi-occur
-                ;; occur-edit-mode: multi-occur depend on after-change-functions
-                ;; to update original buffer. Since inhibit-modification-hooks
-                ;; is set to non-nil, after-change-functions hooks are not going
-                ;; to be called for the changes of other occurrences.  So run
-                ;; the hook here.
-                (run-hook-with-args 'after-change-functions
-                                    beginning
-                                    ending
-                                    change))
+				  (insert-and-inherit value)))
               (iedit-move-conjoined-overlays another-occurrence))))))
 
 (defun iedit-next-occurrence ()
@@ -756,7 +752,7 @@ value of `iedit-occurrence-context-lines' is used for this time."
 
 (defun iedit-apply-on-occurrences (function &rest args)
   "Call function for each occurrence."
-  (let ((inhibit-modification-hooks t))
+  (let ((iedit-updating t))
       (save-excursion
         (dolist (occurrence iedit-occurrences-overlays)
           (apply function (overlay-start occurrence) (overlay-end occurrence) args)))))
@@ -779,7 +775,7 @@ Called with a prefix arg, allow editing the format string used, which
 default to `iedit-increment-format-string'."
   (interactive "*P")
   (iedit-barf-if-buffering)
-  (let ((inhibit-modification-hooks t)
+  (let ((iedit-updating t)
         (fmt-str (if arg
                      (read-string
                       (format "Format incremented numbers (default '%s'): "
@@ -876,7 +872,7 @@ modification is not going to be applied to other occurrences."
              (end (overlay-end ov))
              (modified-string (buffer-substring-no-properties beg end))
              (offset (- (point) beg)) ;; delete-region moves cursor
-             (inhibit-modification-hooks t))
+             (iedit-updating t))
         (when (not (string= iedit-before-buffering-string modified-string))
           (save-excursion
             ;; Rollback the current modification and buffer-undo-list. This is
@@ -951,7 +947,7 @@ FORMAT."
   (unless format-string
     (setq format-string (iedit-default-occurrence-number-format start-at)))
   (let ((iedit-number-occurrence-counter start-at)
-        (inhibit-modification-hooks t))
+        (iedit-updating t))
     (save-excursion
       (goto-char (iedit-first-occurrence))
       (while (/= (point) (point-max))
