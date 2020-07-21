@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-04-12 14:56:20 Victor Ren>
+;; Time-stamp: <2020-07-21 11:35:39 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -147,6 +147,7 @@ Commands:
                  (number-to-string (length iedit-occurrences-overlays)))
          'face
          'font-lock-warning-face))
+  (iedit-lib-start)
   (force-mode-line-update)
   (add-hook 'before-revert-hook 'iedit-rectangle-done nil t)
   (add-hook 'kbd-macro-termination-hook 'iedit-rectangle-done nil t)
@@ -159,7 +160,7 @@ Save the current occurrence string locally and globally.  Save
 the initial string globally."
   (when iedit-buffering
     (iedit-stop-buffering))
-  (iedit-cleanup)
+  (iedit-lib-cleanup)
   (setq iedit-rectangle-mode nil)
   (force-mode-line-update)
   (remove-hook 'before-revert-hook 'iedit-rectangle-done t)

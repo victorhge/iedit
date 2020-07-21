@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-16 22:32:42 Victor Ren>
+;; Time-stamp: <2020-07-21 01:58:10 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://www.emacswiki.org/emacs/Iedit
@@ -167,7 +167,8 @@ foo"
      (should (string= iedit-initial-string-local "foo"))
      (should (eq 'selection iedit-occurrence-type-local))
      (goto-char 1)
-     (insert "123")
+	 (insert "123")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "123foobar
  123foo123foo123foo
@@ -175,6 +176,7 @@ foo"
  123foo"))
      (forward-char 3)
      (insert "456")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "123foo456bar
  123foo456123foo456123foo456
@@ -191,10 +193,12 @@ foo"
      (goto-char (point-at-eol))
      (iedit-mode)
      (delete-region (point) (1- (point)))
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
                       "fo
 fo"))
      (insert "b")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
                       "fob
 fob")))))
@@ -348,18 +352,21 @@ fob")))))
    foo"
    (lambda ()
      (insert "1")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "1foo
   1foo
    barfoo
    1foo"))
      (backward-delete-char 1)
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "foo
   foo
    barfoo
    foo"))
      (capitalize-word 1)
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "Foo
   Foo
@@ -368,6 +375,7 @@ fob")))))
      ;; test insert from empty
      (iedit-delete-occurrences)
      (insert "1")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "1
   1
@@ -393,6 +401,7 @@ fob")))))
    foo"))
      (goto-char 7)
      (insert "1")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "foo
   1foo
@@ -500,6 +509,7 @@ fob")))))
    (lambda ()
      (iedit-toggle-buffering)
      (insert "bar")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "barfoo
  foo
@@ -540,6 +550,7 @@ fob")))))
 	 (push nil buffer-undo-list)
 	 (call-interactively 'iedit-mode)
      (insert "bar")
+	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "barfoo
  foo

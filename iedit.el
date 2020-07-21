@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-16 13:14:05 Victor Ren>
+;; Time-stamp: <2020-07-21 13:52:42 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -447,7 +447,7 @@ Keymap used within overlays:
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (when iedit-mode
-      (iedit-cleanup))
+      (iedit-lib-cleanup))
     (setq result
 	  (catch 'not-same-length
 	    (iedit-start regexp (point-min) (point-max))))
@@ -478,6 +478,7 @@ Keymap used within overlays:
     (setq iedit-mode t))
   (when iedit-auto-buffering
 	(iedit-start-buffering))
+  (iedit-lib-start)
   (run-hooks 'iedit-mode-hook)
   (add-hook 'before-revert-hook 'iedit-done nil t)
   (add-hook 'kbd-macro-termination-hook 'iedit-done nil t)
@@ -578,7 +579,7 @@ the initial string globally."
   (setq iedit-num-lines-to-expand-up 0)
   (setq iedit-num-lines-to-expand-down 0)
 
-  (iedit-cleanup)
+  (iedit-lib-cleanup)
 
   (when iedit-is-narrowed
     (widen)
@@ -691,7 +692,7 @@ controlled with `where' ('top to act on the top, anything else
 for the bottom).  If amount is negative, collapses the top or
 bottom of the search region by `-amount' lines."
   (let ((occurrence (iedit-current-occurrence-string)))
-    (iedit-cleanup)
+    (iedit-lib-cleanup)
     (if (eq where 'top)
         (setq iedit-num-lines-to-expand-up
               (max 0 (+ amount iedit-num-lines-to-expand-up)))
