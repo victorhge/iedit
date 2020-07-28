@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-21 15:03:28 Victor Ren>
+;; Time-stamp: <2020-07-28 22:59:25 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -104,9 +104,9 @@ the traverse of the long `iedit-occurrences-overlays' list."
   :type 'integer
   :group 'iedit)
 
-(defcustom iedit-increment-format-string "%03d"
+(defcustom iedit-increment-format-string "%03d "
   "Format string used to format incremented numbers.
-This is used by `iedit-increment-occurrences'."
+This is used by `iedit-number-occurrences'."
   :type 'string
   :group 'iedit)
 
@@ -234,7 +234,6 @@ It replaces `inhibit-modification-hooks' which prevents calling
     (define-key map (kbd "M-SPC") 'iedit-blank-occurrences)
     (define-key map (kbd "M-D") 'iedit-delete-occurrences)
     (define-key map (kbd "M-N") 'iedit-number-occurrences)
-    (define-key map (kbd "M-V") 'iedit-increment-occurrences)
     (define-key map (kbd "M-B") 'iedit-toggle-buffering)
     (define-key map (kbd "M-<") 'iedit-goto-first-occurrence)
     (define-key map (kbd "M->") 'iedit-goto-last-occurrence)
@@ -769,28 +768,36 @@ value of `iedit-occurrence-context-lines' is used for this time."
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'downcase-region))
 
-(defun iedit-increment-occurrences (&optional arg)
-  "Replace placeholder \"\\#\" by incremented number in each occurrence.
-Called with a prefix arg, allow editing the format string used, which
-default to `iedit-increment-format-string'."
-  (interactive "*P")
+(defun iedit-number-occurrences (start-at &optional format-string)
+  "Insert numbers in front of the occurrences.
+START-AT, if non-nil, should be a number from which to begin
+counting.  FORMAT, if non-nil, should be a format string to pass
+to `format-string' along with the line count.  When called
+interactively with a prefix argument, prompt for START-AT and
+FORMAT."
+  (interactive
+   (if current-prefix-arg
+       (let* ((start-at (read-number "Number to count from: " 1)))
+		 (list start-at
+			   (read-string
+				(format "Format incremented numbers (default '%s'): "
+						iedit-increment-format-string)
+				nil nil iedit-increment-format-string)))
+	 (list 1 iedit-increment-format-string)))
   (iedit-barf-if-buffering)
-  (let ((iedit-updating t)
-        (fmt-str (if arg
-                     (read-string
-                      (format "Format incremented numbers (default '%s'): "
-                              iedit-increment-format-string)
-                      nil nil iedit-increment-format-string)
-                   iedit-increment-format-string)))
+  (let ((number start-at)
+        (iedit-updating t))
     (save-excursion
-      (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
-               for counter from 1
+	  (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
+               for counter from number
                for beg = (overlay-start occurrence)
                for end = (overlay-end occurrence)
                do (progn
-                    (goto-char beg)
-                    (when (re-search-forward "\\\\#" end t)
-                      (replace-match (format fmt-str counter) t)))))))
+					(goto-char beg)
+					(if (re-search-forward "\\\\#" end t)
+						(replace-match (format format-string counter) t)
+					  (insert (format format-string counter)))
+					(iedit-move-conjoined-overlays occurrence))))))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
@@ -917,46 +924,6 @@ After modification, conjoined overlays may be overlapped."
                            'iedit-occurrence-overlay-name)))
         (if next-overlay ; two conjoined occurrences
             (move-overlay next-overlay ending (overlay-end next-overlay)))))))
-
-(defvar iedit-number-line-counter 1
-  "Occurrence number for 'iedit-number-occurrences.")
-
-(defun iedit-default-occurrence-number-format (start-at)
-  (concat "%"
-          (int-to-string
-           (length (int-to-string
-                    (1- (+ (length iedit-occurrences-overlays) start-at)))))
-          "d "))
-
-(defun iedit-number-occurrences (start-at &optional format-string)
-  "Insert numbers in front of the occurrences.
-START-AT, if non-nil, should be a number from which to begin
-counting.  FORMAT, if non-nil, should be a format string to pass
-to `format-string' along with the line count.  When called
-interactively with a prefix argument, prompt for START-AT and
-FORMAT."
-  (interactive
-   (if current-prefix-arg
-       (let* ((start-at (read-number "Number to count from: " 1)))
-         (list start-at
-               (read-string "Format string: "
-                            (iedit-default-occurrence-number-format
-                             start-at))))
-     (list 1 nil)))
-  (iedit-barf-if-buffering)
-  (unless format-string
-    (setq format-string (iedit-default-occurrence-number-format start-at)))
-  (let ((iedit-number-occurrence-counter start-at)
-        (iedit-updating t))
-    (save-excursion
-      (goto-char (iedit-first-occurrence))
-      (while (/= (point) (point-max))
-        (insert (format format-string iedit-number-occurrence-counter))
-        (iedit-move-conjoined-overlays (iedit-find-current-occurrence-overlay))
-        (setq iedit-number-occurrence-counter
-              (1+ iedit-number-occurrence-counter))
-        (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))
-        (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))
 
 ;;; help functions
 (defun iedit-find-current-occurrence-overlay ()
