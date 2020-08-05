@@ -121,7 +121,6 @@ Commands:
   (setq beg (copy-marker beg))
   (setq end (copy-marker end t))
   (setq iedit-occurrences-overlays nil)
-  (setq iedit-initial-string-local nil)
   (setq iedit-occurrence-keymap iedit-rect-keymap)
   (save-excursion
     (let ((beg-col (progn (goto-char beg) (current-column)))
