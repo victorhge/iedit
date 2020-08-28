@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-28 22:59:25 Victor Ren>
+;; Time-stamp: <2020-08-26 19:29:09 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -104,7 +104,7 @@ the traverse of the long `iedit-occurrences-overlays' list."
   :type 'integer
   :group 'iedit)
 
-(defcustom iedit-increment-format-string "%03d "
+(defcustom iedit-increment-format-string "%03d"
   "Format string used to format incremented numbers.
 This is used by `iedit-number-occurrences'."
   :type 'string
@@ -576,14 +576,20 @@ If the point is already in the last occurrences, you are asked to type
 another `iedit-next-occurrence', it starts again from the
 beginning of the buffer."
   (interactive)
-  (let ((pos (point))
-        (in-occurrence (get-char-property (point) 'iedit-occurrence-overlay-name)))
-    (when in-occurrence
-      (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
-    (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
+  (let* ((pos (point))
+		 (ov (iedit-find-current-occurrence-overlay)))
+    (if ov
+		(if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
+			(setq pos (overlay-end ov)) ; conjoined overlay
+		  ;; from inside
+		  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
+		  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+	  ;; from outside
+	  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+	  
     (if (/= pos (point-max))
         (setq iedit-forward-success t)
-      (if (and iedit-forward-success in-occurrence)
+      (if (and iedit-forward-success ov)
           (progn (message "This is the last occurrence.")
                  (setq iedit-forward-success nil))
         (progn
@@ -605,22 +611,25 @@ another `iedit-prev-occurrence', it starts again from the end of
 the buffer."
   (interactive)
   (let ((pos (point))
-        (in-occurrence (get-char-property (point) 'iedit-occurrence-overlay-name)))
-    (when in-occurrence
-      (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name)))
-    (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
+		(ov (iedit-find-current-occurrence-overlay))
+		(previous-overlay))
+	(when (/= pos (point-min))
+	  (when ov (setq pos (overlay-start ov)))
+	  (if (and ov
+			   (setq previous-overlay (iedit-find-overlay-at-point (1- pos) 'iedit-occurrence-overlay-name)))
+		  (setq pos (overlay-start previous-overlay))
+		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
+		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))))
     ;; At the start of the first occurrence
     (if (or (and (eq pos (point-min))
                  (not (get-char-property (point-min) 'iedit-occurrence-overlay-name)))
             (and (eq (point) (point-min))
-                 in-occurrence))
-        (if (and iedit-forward-success in-occurrence)
+                 ov))
+        (if (and iedit-forward-success ov)
             (progn (message "This is the first occurrence.")
                    (setq iedit-forward-success nil))
           (progn
-            (setq pos (previous-single-char-property-change (point-max) 'iedit-occurrence-overlay-name))
-            (if (not (get-char-property (- (point-max) 1) 'iedit-occurrence-overlay-name))
-                (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+            (setq pos (iedit-last-occurrence))
             (setq iedit-forward-success t)
             (message "Located the last occurrence.")))
       (setq iedit-forward-success t))
@@ -653,10 +662,12 @@ the buffer."
 
 (defun iedit-last-occurrence ()
   "return the position of the last occurrence."
-  (let ((pos (previous-single-char-property-change (point-max) 'iedit-occurrence-overlay-name)))
-    (if (not (get-char-property (- (point-max) 1) 'iedit-occurrence-overlay-name))
-        (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name)))
-    pos))
+  (let ((ov (iedit-find-overlay-at-point (1- (point-max)) 'iedit-occurrence-overlay-name))
+		(pos (point-max)))
+	(if ov
+		(overlay-start ov)
+	  (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
+	  (overlay-start (iedit-find-overlay-at-point (1- pos) 'iedit-occurrence-overlay-name)))))
 
 (defun iedit-show/hide-context-lines (&optional arg)
   "Show or hide context lines.
@@ -794,16 +805,21 @@ FORMAT."
   (let ((number start-at)
         (iedit-updating t))
     (save-excursion
-	  (cl-loop for occurrence in (reverse iedit-occurrences-overlays)
-               for counter from number
-               for beg = (overlay-start occurrence)
-               for end = (overlay-end occurrence)
-               do (progn
-					(goto-char beg)
-					(if (re-search-forward "\\\\#" end t)
-						(replace-match (format format-string counter) t)
-					  (insert (format format-string counter)))
-					(iedit-move-conjoined-overlays occurrence))))))
+	  (goto-char (iedit-first-occurrence))
+	  (cl-loop for counter from number
+			   for ov = (iedit-find-current-occurrence-overlay)
+			   while (/= (point) (point-max)) 
+			   do (progn
+		  (if (re-search-forward "\\\\#" (overlay-end ov) t)
+			  (replace-match (format format-string counter) t)
+			(insert (format format-string counter)))
+		  (iedit-move-conjoined-overlays ov)
+		  ;; goto the beginning of the next occourrence overlay
+		  (if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
+			  (goto-char (overlay-end ov)) ; conjoined overlay
+			(when (< (point) (overlay-end ov))
+			  (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
+			(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)

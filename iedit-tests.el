@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-21 01:58:10 Victor Ren>
+;; Time-stamp: <2020-08-26 19:33:45 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -329,9 +329,6 @@ fob")))))
      (should (= iedit-occurrence-index 2))
      (goto-char (point-max))
      (iedit-prev-occurrence)
-     (should (= (point) 27))
-     (should (= iedit-occurrence-index 3))
-     (iedit-prev-occurrence)
      (should (= (point) 24))
      (should (= iedit-occurrence-index 3))
      (iedit-prev-occurrence)
@@ -462,7 +459,7 @@ fob")))))
   bar
    barfoo
    bar"))
-     (iedit-number-occurrences 1)
+     (iedit-number-occurrences 1 "%d ")
      (should (string= (buffer-string)
 "1 bar
   2 bar
