@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-08-26 19:29:09 Victor Ren>
+;; Time-stamp: <2020-10-31 11:22:18 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -260,15 +260,14 @@ cursors."
 	   (master (point)))
       (save-excursion
         (dolist (occurrence iedit-occurrences-overlays)
-	  (goto-char (+ (overlay-start occurrence) offset))
-	  (unless (= master (point))
-	    (mc/create-fake-cursor-at-point))))
+		  (goto-char (+ (overlay-start occurrence) offset))
+		  (unless (= master (point))
+			(mc/create-fake-cursor-at-point))))
       (run-hooks 'iedit-aborting-hook)
       (multiple-cursors-mode 1)))
-  ;; `multiple-cursors-mode' runs `post-command-hook' function for all the
-  ;; cursors. `post-command-hook' is setup in `iedit-switch-to-mc-mode' So the
-  ;; function is executed after `iedit-switch-to-mc-mode'. It is not expected.
-  ;; `mc/cmds-to-run-once' is for skipping this.
+  ;; `multiple-cursors-mode' runs `post-command-hook' function on all the
+  ;; cursors for updating them .  `iedit-switch-to-mc-mode' is not supposed to
+  ;; be run in mc mode.  `mc/cmds-to-run-once' is for skipping this.
   (add-to-list 'mc/cmds-to-run-once 'iedit-switch-to-mc-mode)
   (define-key iedit-occurrence-keymap-default (kbd "M-M") 'iedit-switch-to-mc-mode))
 
@@ -483,9 +482,10 @@ occurrences. Refer to `modification-hooks' for more details.
 Current supported edits are insertion, yank, deletion and
 replacement.  If this modification is going out of the
 occurrence, it will abort Iedit mode."
-  (if undo-in-progress
-      ;; If the "undo" change make occurrences different, it is going to mess up
-      ;; occurrences.  So a length check will be done after undo command is executed.
+  (if (and undo-in-progress (null iedit-after-change-list))
+      ;; If the "undo" change (not part of another command) make occurrences
+      ;; different, it is going to mess up occurrences.  So a length check will
+      ;; be done after undo command is executed.
       (when (not iedit-post-undo-hook-installed)
         (add-hook 'post-command-hook 'iedit-post-undo nil t)
         (setq iedit-post-undo-hook-installed t))
@@ -617,7 +617,7 @@ the buffer."
 	  (when ov (setq pos (overlay-start ov)))
 	  (if (and ov
 			   (setq previous-overlay (iedit-find-overlay-at-point (1- pos) 'iedit-occurrence-overlay-name)))
-		  (setq pos (overlay-start previous-overlay))
+		  (setq pos (overlay-start previous-overlay)) ;conjoined
 		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
 		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))))
     ;; At the start of the first occurrence
