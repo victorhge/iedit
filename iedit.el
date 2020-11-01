@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010, 2011, 2012 Victor Ren
 
-;; Time-stamp: <2020-07-21 13:52:42 Victor Ren>
+;; Time-stamp: <2020-11-01 14:45:02, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -279,7 +279,7 @@ This is like `describe-bindings', but displays only Iedit keys."
 
 ;; Avoid to restore Iedit mode when restoring desktop
 (add-to-list 'desktop-minor-mode-handlers
-             '(iedit-mode . nil))
+             '(iedit-mode . ignore))
 
 ;;; Define iedit help map.
 (eval-when-compile (require 'help-macro))
@@ -714,7 +714,7 @@ line.  N defaults to 1.  If N is negative, collapses the top of
 the search region by `-N' lines."
   (interactive "p")
   (iedit-expand-by-a-line 'top N))
-  
+
 (defun iedit-expand-down-a-line (&optional N)
   "After start iedit-mode only on current symbol or the active
 region, this function expands the search region downwards by N
