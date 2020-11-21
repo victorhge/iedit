@@ -557,6 +557,7 @@ Apply the change to all the other occurrences. "
 		;; for all the other occurrences
 		(inhibit-modification-hooks (memq #'c-before-change before-change-functions)))
     (save-excursion
+	  (iedit-move-conjoined-overlays occurrence)
       (dolist (another-occurrence iedit-occurrences-overlays)
             (let* ((beginning (+ (overlay-start another-occurrence) offset))
                    (ending (+ beginning (- end beg))))
