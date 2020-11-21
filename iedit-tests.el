@@ -73,12 +73,14 @@
           (with-iedit-test-buffer "* iedit transient mark *"
             (transient-mark-mode t)
             (setq iedit-transient-mark-sensitive t)
+			(setq iedit-case-sensitive t)
             (insert input-buffer-string)
             (goto-char 1)
             (iedit-mode)
             (funcall body))
           (with-iedit-test-buffer "* iedit NO transient mark *"
             (setq iedit-transient-mark-sensitive nil)
+			(setq iedit-case-sensitive t)
             (transient-mark-mode -1)
             (insert input-buffer-string)
             (goto-char 1)
@@ -432,6 +434,29 @@ fob")))))
      (iedit-next-occurrence)
      (iedit-toggle-case-sensitive)
      (should (= 1 (length iedit-occurrences-overlays))))))
+
+(ert-deftest iedit-case-preserve-test ()
+  (with-iedit-test-fixture
+"foo
+  Foo
+   barFoo
+   FOO"
+(lambda ()
+  (iedit-mode)
+  (goto-char 1)
+  (set-mark-command nil)
+  (forward-char 3)
+  (let ((iedit-case-sensitive nil)
+		(case-replace t))
+	(iedit-mode)
+	(goto-char 1)
+	(insert "bar")
+	(run-hooks 'post-command-hook)
+	(should (string= (buffer-string)
+"barfoo
+  BarFoo
+   barBarFoo
+   BARFOO"))))))
 
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"

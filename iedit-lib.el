@@ -431,7 +431,9 @@ occurrences if the user starts typing."
     (overlay-put occurrence 'insert-behind-hooks '(iedit-update-occurrences))
     (overlay-put occurrence 'modification-hooks '(iedit-update-occurrences))
     (overlay-put occurrence 'priority iedit-overlay-priority)
-    (overlay-put occurrence 'category 'iedit-overlay)
+    (overlay-put occurrence 'category (if (and (not iedit-case-sensitive) case-replace)
+										  (iedit-case-action begin end)
+										'no-change))
     occurrence))
 
 (defun iedit-make-read-only-occurrence-overlay (begin end)
@@ -548,7 +550,7 @@ part to apply it to all the other occurrences."
 		(setq iedit-after-change-list nil)))))
   
 (defun iedit-update-occurrences-3 (occurrence beg end &optional change)
-  "The third part of updateing occurrences.
+  "The third part of updating occurrences.
 Apply the change to all the other occurrences. "
   (let ((iedit-updating t)
         (offset (- beg (overlay-start occurrence)))
@@ -558,15 +560,28 @@ Apply the change to all the other occurrences. "
 		(inhibit-modification-hooks (memq #'c-before-change before-change-functions)))
     (save-excursion
 	  (iedit-move-conjoined-overlays occurrence)
+	  (when (/= beg end)
+		(case (overlay-get occurrence 'category)
+		  ('all-caps
+		   (upcase-region beg end))
+		  ('cap-initial 
+		   (when (= 0 offset) (capitalize-region beg end )))))
       (dolist (another-occurrence iedit-occurrences-overlays)
-            (let* ((beginning (+ (overlay-start another-occurrence) offset))
-                   (ending (+ beginning (- end beg))))
-              (when (not (eq another-occurrence occurrence))
-				(when change (delete-region beginning (+ beginning change))) ;; delete
-				(when (/= beg end) ;; insert
-				  (goto-char beginning)
-				  (insert-and-inherit value)))
-              (iedit-move-conjoined-overlays another-occurrence))))
+        (when (not (eq another-occurrence occurrence))
+          (let* ((beginning (+ (overlay-start another-occurrence) offset))
+				 (ending (+ beginning (- end beg))))
+			(when (/= 0 change) (delete-region beginning (+ beginning change))) ;; delete
+			(when (/= beg end) ;; insert
+			  (goto-char beginning)
+			  (insert-and-inherit
+			   (case (overlay-get another-occurrence 'category)
+				 ('no-change value)
+				 ('all-caps
+				  (upcase value))
+				 ('cap-initial
+				  (if (= 0 offset) (capitalize value)
+					value))))))
+          (iedit-move-conjoined-overlays another-occurrence))))
 	(when inhibit-modification-hooks
 	  ;; run the after change functions only once. It seems OK for c-mode
 	  (run-hook-with-args 'after-change-functions beg end change))))
@@ -842,7 +857,7 @@ FORMAT."
      (lambda (beg end from-string to-string)
        (goto-char beg)
        (search-forward from-string end)
-       (replace-match to-string t))
+       (replace-match to-string (not (and (not iedit-case-sensitive) case-replace))))
      from-string to-string)
     (goto-char (+ (overlay-start ov) offset))))
 
@@ -892,6 +907,47 @@ be applied to other occurrences when buffering is off."
   (buffer-disable-undo)
   (message "Start buffering editing..."))
 
+(defun iedit-case-action (beg end)
+  "Decide how to casify by examining the text between `beg' and `end'.
+
+Maybe capitalize the whole text, or maybe just word initials,
+based on the text between `beg' and `end'.  If the text has only
+capital letters and has at least one multiletter word, convert
+`new-text' to all caps.  Otherwise if all words are capitalized
+in the replaced text, capitalize each word in `new-text'"
+  (let ((some-word nil)
+		(some-lowercase nil)
+		(some-uppercase nil)
+		(some-non-uppercase-init nil)
+		(previous-char ?\n)
+		(char nil)
+		(index 0))
+	(while (< index (- end beg))
+	  (setq char (elt (buffer-substring beg end) index))
+	  (if (and (= char (downcase char))
+			   (/= char (upcase char)))
+		  (progn
+			(setq some-lowercase t)
+			(if (/= ?w (char-syntax previous-char))
+				(setq some-non-uppercase-init t)
+			  (setq some-word t)))
+		(if (/= char (downcase char))
+			(progn
+			  (setq some-uppercase t)
+			  (when (= ?w (char-syntax previous-char))
+				(setq some-word t)))
+		  (when (/= ?w (char-syntax previous-char))
+			(setq some-non-uppercase-init t))))
+	  (setq previous-char char)
+	  (setq index (1+ index)))
+	(if (and (null some-lowercase) some-word)
+		'all-caps
+	  (if (and (null some-non-uppercase-init) some-word)
+		  'cap-initial
+		(if (and (null some-non-uppercase-init) some-uppercase)
+			'all-caps
+		  'no-change)))))
+
 (defun iedit-stop-buffering ()
   "Stop buffering and apply the modification to other occurrences.
 If current point is not at any occurrence, the buffered
@@ -921,7 +977,14 @@ modification is not going to be applied to other occurrences."
                 (delete-region beginning ending)
                 (unless (eq beg end) ;; replacement
                   (goto-char beginning)
-                  (insert-and-inherit modified-string))
+                  (insert-and-inherit
+				   (case (overlay-get occurrence 'category)
+					 ('all-caps
+					  (upcase modified-string))
+					 ('cap-initial 
+					  (if (= 0 offset) (capitalize modified-string)
+						modified-string))
+					 (t modified-string))))
                 (iedit-move-conjoined-overlays occurrence))))
           (goto-char (+ (overlay-start ov) offset))))))
   (setq iedit-buffering nil)
