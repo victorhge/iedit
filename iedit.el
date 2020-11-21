@@ -1,8 +1,8 @@
 ;;; iedit.el --- Edit multiple regions in the same way simultaneously.
 
-;; Copyright (C) 2010, 2011, 2012 Victor Ren
+;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-01 14:45:02, updated by Pierre Rouleau>
+;; Time-stamp: <2020-11-21 21:08:37 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9

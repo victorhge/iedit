@@ -1,8 +1,8 @@
 ;;; iedit-tests.el --- iedit's automatic-tests
 
-;; Copyright (C) 2010, 2011, 2012 Victor Ren
+;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-08-26 19:33:45 Victor Ren>
+;; Time-stamp: <2020-11-21 21:09:39 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -62,7 +62,6 @@
 
 (defun goto-word-beginning (word)
   (goto-word word t))
-
 
 (defun with-iedit-test-fixture (input-buffer-string body)
   "iedit test fixture"
