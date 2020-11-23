@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-21 21:08:37 Victor Ren>
+;; Time-stamp: <2020-11-23 15:18:05 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -28,11 +28,16 @@
 
 ;;; Commentary:
 
-;; This package includes Emacs minor modes (iedit-mode and
-;; iedit-rectangle-mode) based on a API library (iedit-lib) and allows you to edit
-;; one occurrence of some text in a buffer (possibly narrowed) or region, and
-;; simultaneously have other occurrences edited in the same way, with visual
-;; feedback as you type.
+;; This package includes Emacs minor modes (iedit-mode and iedit-rectangle-mode)
+;; based on a API library (iedit-lib) and allows you to alter one occurrence of
+;; some text in a buffer (possibly narrowed) or region, and simultaneously have
+;; other occurrences changed in the same way, with visual feedback as you type.
+
+;; `iedit-mode' is a great alternative of build-in replace commands:
+
+;;  - A more intuitive way to alter all the occurrences at once
+;;  - Visual feedback
+;;  - Less keystrokes in most cases
 
 ;; Normal work flow of Iedit mode is like:
 
@@ -54,7 +59,7 @@
 ;; effect of a temporary `keep-lines' or `occur'.  To get this effect, hit C-'
 ;; when in Iedit mode - it toggles hiding non-matching lines.
 
-;; Renaming refactoring is convenient in Iedit mode
+;; `iedit-mode' is optimized for renaming refactoring in many ways:
 
 ;;  - The symbol under point is selected as occurrence by default and only complete
 ;;    symbols are matched

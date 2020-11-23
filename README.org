@@ -4,18 +4,23 @@
 
 [[./iedit-demo.gif]]
 ** Introduction
-This package includes Emacs minor modes (iedit-mode and
-iedit-rectangle-mode) based on a API library (iedit-lib) and allows you to edit
-one occurrence of some text in a buffer (possibly narrowed) or region, and
-simultaneously have other occurrences edited in the same way, with visual
-feedback as you type.
+This package includes Emacs minor modes (iedit-mode and iedit-rectangle-mode)
+based on a API library (iedit-lib) and allows you to alter one occurrence of
+some text in a buffer (possibly narrowed) or region, and simultaneously have
+other occurrences changed in the same way, with visual feedback as you type.
+
+`iedit-mode' is a great alternative of build-in replace commands:
+
+ - A more intuitive way to alter all the occurrences at once
+ - Visual feedback
+ - Less keystrokes in most cases
 
 Normal work flow of Iedit mode is like:
 
- - Move to certain point and press C-; (The default key binding).  All
-   occurrences of a symbol, string or a region in the buffer are highlighted
-   corresponding to the thing under the point, current mark and prefix argument.
-   Refer to the document of `iedit-mode' for details.
+ - Move to certain point and press C-; (The default key binding) to enable
+   `iedit-mode'.  All occurrences of a symbol, string or a region in the buffer
+   are highlighted corresponding to the thing under the point, current mark and
+   prefix argument.  Refer to the document of `iedit-mode' for details.
 
  - Edit one of the occurrences
    The change is applied to other occurrences simultaneously.
@@ -30,7 +35,7 @@ buffer lines that match the current text being edited.  This gives you the
 effect of a temporary `keep-lines' or `occur'.  To get this effect, hit C-'
 when in Iedit mode - it toggles hiding non-matching lines.
 
-Renaming refactoring is convenient in Iedit mode
+`iedit-mode' is optimized for renaming refactoring in many ways:
 
  - The symbol under point is selected as occurrence by default and only complete
    symbols are matched

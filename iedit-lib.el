@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-21 21:16:05 Victor Ren>
+;; Time-stamp: <2020-11-23 15:50:37 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -124,7 +124,9 @@ configurable via `iedit-ready-only-occurrence'.")
 
 (defvar iedit-case-sensitive iedit-case-sensitive-default
   "This is buffer local variable.
-If no-nil, matching is case sensitive.")
+If no-nil, matching is case sensitive.  If nil and `case-replace'
+is no-nil, iedit try to preserve the case pattern of each
+occurrence.")
 
 (defvar iedit-hiding nil
   "This is buffer local variable which indicates whether buffer lines are hided. ")
@@ -431,8 +433,9 @@ occurrences if the user starts typing."
     (overlay-put occurrence 'insert-behind-hooks '(iedit-update-occurrences))
     (overlay-put occurrence 'modification-hooks '(iedit-update-occurrences))
     (overlay-put occurrence 'priority iedit-overlay-priority)
+	;; Identify case pattern of the occurrence.
     (overlay-put occurrence 'category (if (and (not iedit-case-sensitive) case-replace)
-										  (iedit-case-action begin end)
+										  (iedit-case-pattern begin end)
 										'no-change))
     occurrence))
 
@@ -561,10 +564,11 @@ Apply the change to all the other occurrences. "
     (save-excursion
 	  (iedit-move-conjoined-overlays occurrence)
 	  (when (/= beg end)
+		;; apply the case pattern on the current occurrence
 		(case (overlay-get occurrence 'category)
 		  ('all-caps
 		   (upcase-region beg end))
-		  ('cap-initial 
+		  ('cap-initial
 		   (when (= 0 offset) (capitalize-region beg end )))))
       (dolist (another-occurrence iedit-occurrences-overlays)
         (when (not (eq another-occurrence occurrence))
@@ -574,6 +578,7 @@ Apply the change to all the other occurrences. "
 			(when (/= beg end) ;; insert
 			  (goto-char beginning)
 			  (insert-and-inherit
+			   ;; preserve the case pattern of each occurrence
 			   (case (overlay-get another-occurrence 'category)
 				 ('no-change value)
 				 ('all-caps
@@ -907,23 +912,26 @@ be applied to other occurrences when buffering is off."
   (buffer-disable-undo)
   (message "Start buffering editing..."))
 
-(defun iedit-case-action (beg end)
-  "Decide how to casify by examining the text between `beg' and `end'.
+(defun iedit-case-pattern (beg end)
+  "Distinguish the case pattern of the text between `beg' and `end'.
 
-Maybe capitalize the whole text, or maybe just word initials,
-based on the text between `beg' and `end'.  If the text has only
-capital letters and has at least one multiletter word, convert
-`new-text' to all caps.  Otherwise if all words are capitalized
-in the replaced text, capitalize each word in `new-text'"
+These case ptterns are the same as the ones Emacs replace
+commands can recognized - three alternatives - all caps,
+captilized, the others.
+
+If the text has only capital letters and has at least one
+multiletter word, it is 'all caps'. If all words are capitalized,
+it is captilized.'"
   (let ((some-word nil)
 		(some-lowercase nil)
 		(some-uppercase nil)
 		(some-non-uppercase-init nil)
 		(previous-char ?\n)
 		(char nil)
-		(index 0))
+		(index 0)
+		(text (buffer-substring beg end)))
 	(while (< index (- end beg))
-	  (setq char (elt (buffer-substring beg end) index))
+	  (setq char (elt text index))
 	  (if (and (= char (downcase char))
 			   (/= char (upcase char)))
 		  (progn
