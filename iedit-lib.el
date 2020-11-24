@@ -565,10 +565,10 @@ Apply the change to all the other occurrences. "
 	  (iedit-move-conjoined-overlays occurrence)
 	  (when (/= beg end)
 		;; apply the case pattern on the current occurrence
-		(case (overlay-get occurrence 'category)
-		  ('all-caps
+		(cl-case (overlay-get occurrence 'category)
+		  (all-caps
 		   (upcase-region beg end))
-		  ('cap-initial
+		  (cap-initial
 		   (when (= 0 offset) (capitalize-region beg end )))))
       (dolist (another-occurrence iedit-occurrences-overlays)
         (when (not (eq another-occurrence occurrence))
@@ -579,13 +579,14 @@ Apply the change to all the other occurrences. "
 			  (goto-char beginning)
 			  (insert-and-inherit
 			   ;; preserve the case pattern of each occurrence
-			   (case (overlay-get another-occurrence 'category)
-				 ('no-change value)
-				 ('all-caps
-				  (upcase value))
-				 ('cap-initial
-				  (if (= 0 offset) (capitalize value)
-					value))))))
+			   (cl-case (overlay-get another-occurrence 'category)
+			     (no-change value)
+			     (all-caps
+			      (upcase value))
+			     (cap-initial
+			      (if (= 0 offset)
+                                  (capitalize value)
+				value))))))
           (iedit-move-conjoined-overlays another-occurrence))))
 	(when inhibit-modification-hooks
 	  ;; run the after change functions only once. It seems OK for c-mode
@@ -986,13 +987,14 @@ modification is not going to be applied to other occurrences."
                 (unless (eq beg end) ;; replacement
                   (goto-char beginning)
                   (insert-and-inherit
-				   (case (overlay-get occurrence 'category)
-					 ('all-caps
-					  (upcase modified-string))
-					 ('cap-initial 
-					  (if (= 0 offset) (capitalize modified-string)
-						modified-string))
-					 (t modified-string))))
+				   (cl-case (overlay-get occurrence 'category)
+				     (all-caps
+				      (upcase modified-string))
+				     (cap-initial 
+				      (if (= 0 offset)
+                                          (capitalize modified-string)
+					modified-string))
+				     (t modified-string))))
                 (iedit-move-conjoined-overlays occurrence))))
           (goto-char (+ (overlay-start ov) offset))))))
   (setq iedit-buffering nil)
