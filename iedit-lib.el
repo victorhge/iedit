@@ -56,6 +56,8 @@
 
 ;; (eval-when-compile (require 'cl-lib))
 
+(declare-function c-before-change "cc-mode.el")
+
 (defgroup iedit nil
   "Edit multiple regions in the same way simultaneously.
 The regions are usually the same, called 'occurrence' in the mode."

@@ -126,7 +126,7 @@ Commands:
     (let ((beg-col (progn (goto-char beg) (current-column)))
           (end-col (progn (goto-char end) (current-column))))
       (when (< end-col beg-col)
-        (rotatef beg-col end-col))
+        (cl-rotatef beg-col end-col))
       (goto-char beg)
       (while
           (progn
