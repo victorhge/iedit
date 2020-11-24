@@ -33,6 +33,7 @@
 (require 'ert)
 (require 'iedit)
 (require 'iedit-rect)
+(require 'elp)
 
 (ert-deftest iedit-compile-test ()
   (let ((byte-compile-error-on-warn t))
