@@ -35,10 +35,16 @@
 (require 'iedit-rect)
 (require 'elp)
 
-(ert-deftest iedit-compile-test ()
-  (let ((byte-compile-error-on-warn t))
-    (should (byte-compile-file (locate-library "iedit.el")))
-    (delete-file (byte-compile-dest-file "iedit.el") nil)))
+(ert-deftest iedit-batch-compile-test ()
+  (with-temp-buffer
+	(call-process-shell-command "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
+    (should (string= (buffer-string) "Iedit default key binding is C-;
+Iedit-rect default key binding is <C-x> <r> <RET>
+"))
+	(delete-file (byte-compile-dest-file "iedit-lib.el") nil)
+	(delete-file (byte-compile-dest-file "iedit-rect.el") nil)
+	(delete-file (byte-compile-dest-file "iedit-tests.el") nil)
+	(delete-file (byte-compile-dest-file "iedit.el") nil)))
 
 (defmacro with-iedit-test-buffer (buffer-name &rest body)
   (declare (indent 1) (debug t))
