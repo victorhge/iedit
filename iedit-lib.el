@@ -405,10 +405,20 @@ there are."
     (iedit-update-index)
     )) ;; todo test this function
 
+(defvar iedit-mode)
+
 (defun iedit-lib-start ()
   "Initialize the hooks."
+  (setq iedit-mode t)
+  (when iedit-auto-buffering
+    (iedit-start-buffering))
   (add-hook 'post-command-hook 'iedit-update-occurrences-2 nil t)
-  (setq iedit-after-change-list nil))
+  (setq iedit-after-change-list nil)
+  (run-hooks 'iedit-mode-hook)
+  (add-hook 'before-revert-hook 'iedit-done nil t)
+  (add-hook 'kbd-macro-termination-hook 'iedit-done nil t)
+  (add-hook 'change-major-mode-hook 'iedit-done nil t)
+  (add-hook 'iedit-aborting-hook 'iedit-done nil t))
 
 (defun iedit-lib-cleanup ()
   "Clean up occurrence overlay, invisible overlay and local variables."
