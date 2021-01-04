@@ -36,7 +36,7 @@
 ;; - Modify the occurrences
 ;; - Hide/show
 ;; - Other basic support APIs
-;; 
+;;
 ;; A few concepts that help you understand what this is about:
 ;;
 ;; Occurrence - one of the regions that are selected, highlighted, usually the
@@ -563,7 +563,7 @@ part to apply it to all the other occurrences."
 		 endpos
 		 dellen)
 		(setq iedit-after-change-list nil)))))
-  
+
 (defun iedit-update-occurrences-3 (occurrence beg end &optional change)
   "The third part of updating occurrences.
 Apply the change to all the other occurrences. "
@@ -620,7 +620,7 @@ beginning of the buffer."
 		  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
 	  ;; from outside
 	  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
-	  
+
     (if (/= pos (point-max))
         (setq iedit-forward-success t)
       (if (and iedit-forward-success ov)
@@ -808,13 +808,13 @@ value of `iedit-occurrence-context-lines' is used for this time."
           (apply function (overlay-start occurrence) (overlay-end occurrence) args)))))
 
 (defun iedit-upcase-occurrences ()
-  "Covert occurrences to upper case."
+  "Convert occurrences to upper case."
   (interactive "*")
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'upcase-region))
 
 (defun iedit-downcase-occurrences()
-  "Covert occurrences to lower case."
+  "Convert occurrences to lower case."
   (interactive "*")
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences 'downcase-region))
@@ -842,7 +842,7 @@ FORMAT."
 	  (goto-char (iedit-first-occurrence))
 	  (cl-loop for counter from number
 			   for ov = (iedit-find-current-occurrence-overlay)
-			   while (/= (point) (point-max)) 
+			   while (/= (point) (point-max))
 			   do (progn
 		  (if (re-search-forward "\\\\#" (overlay-end ov) t)
 			  (replace-match (format format-string counter) t)
@@ -1002,7 +1002,7 @@ modification is not going to be applied to other occurrences."
 				   (cl-case (overlay-get occurrence 'category)
 				     (all-caps
 				      (upcase modified-string))
-				     (cap-initial 
+				     (cap-initial
 				      (if (= 0 offset)
                                           (capitalize modified-string)
 					modified-string))
