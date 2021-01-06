@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-04 14:10:02 Victor Ren>
+;; Time-stamp: <2021-01-06 11:17:35 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -146,8 +146,7 @@ Commands:
                  (number-to-string (length iedit-occurrences-overlays)))
          'face
          'font-lock-warning-face))
-  (add-hook 'iedit-aborting-hook 'iedit-rectangle-done nil t)
-  (iedit-lib-start)
+  (iedit-lib-start 'iedit-rectangle-done)
   (force-mode-line-update))
 
 (defun iedit-rectangle-done ()
@@ -158,8 +157,7 @@ the initial string globally."
     (iedit-stop-buffering))
   (iedit-lib-cleanup)
   (setq iedit-rectangle-mode nil)
-  (force-mode-line-update)
-  (remove-hook 'iedit-lib-aborting-hook 'iedit-rectangle-done t))
+  (force-mode-line-update))
 
 (defun iedit-kill-rectangle(&optional fill)
   "Kill the rectangle.
