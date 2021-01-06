@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-23 15:50:37 Victor Ren>
+;; Time-stamp: <2021-01-04 14:07:43 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -160,7 +160,7 @@ insertion against a zero-width occurrence.")
 (defvar iedit-aborting nil
   "This is buffer local variable which indicates Iedit mode is aborting.")
 
-(defvar iedit-aborting-hook nil
+(defvar iedit-lib-aborting-hook nil
   "Functions to call before iedit-abort.  Normally it should be mode exit function.")
 
 (defvar iedit-post-undo-hook-installed nil
@@ -206,6 +206,7 @@ It replaces `inhibit-modification-hooks' which prevents calling
 (make-variable-buffer-local 'iedit-post-undo-hook-installed)
 (make-variable-buffer-local 'iedit-occurrence-context-lines)
 (make-variable-buffer-local 'iedit-occurrence-index)
+(make-variable-buffer-local 'iedit-lib-aborting-hook)
 
 (defconst iedit-occurrence-overlay-name 'iedit-occurrence-overlay-name)
 (defconst iedit-invisible-overlay-name 'iedit-invisible-overlay-name)
@@ -267,7 +268,7 @@ cursors."
 		  (goto-char (+ (overlay-start occurrence) offset))
 		  (unless (= master (point))
 			(mc/create-fake-cursor-at-point))))
-      (run-hooks 'iedit-aborting-hook)
+      (run-hooks 'iedit-lib-aborting-hook)
       (multiple-cursors-mode 1)))
   ;; `multiple-cursors-mode' runs `post-command-hook' function on all the
   ;; cursors for updating them .  `iedit-switch-to-mc-mode' is not supposed to
@@ -297,7 +298,7 @@ It should be set before occurrence overlay is created.")
 (defun iedit-quit ()
   "Quit the current mode."
   (interactive)
-  (run-hooks 'iedit-aborting-hook))
+  (run-hooks 'iedit-lib-aborting-hook))
 
 (defun iedit-make-markers-overlays (markers)
   "Create occurrence overlays on a list of markers."
@@ -408,6 +409,9 @@ there are."
 (defun iedit-lib-start ()
   "Initialize the hooks."
   (add-hook 'post-command-hook 'iedit-update-occurrences-2 nil t)
+  (add-hook 'before-revert-hook 'iedit-quit nil t)
+  (add-hook 'kbd-macro-termination-hook 'iedit-quit nil t)
+  (add-hook 'change-major-mode-hook 'iedit-quit nil t)
   (setq iedit-after-change-list nil))
 
 (defun iedit-lib-cleanup ()
@@ -415,6 +419,9 @@ there are."
   (remove-hook 'post-command-hook 'iedit-update-occurrences-2 t)
   (remove-overlays nil nil iedit-occurrence-overlay-name t)
   (iedit-show-all)
+  (remove-hook 'before-revert-hook 'iedit-quit t)
+  (remove-hook 'kbd-macro-termination-hook 'iedit-quit t)
+  (remove-hook 'change-major-mode-hook 'iedit-quit t)
   (setq iedit-occurrences-overlays nil)
   (setq iedit-read-only-occurrences-overlays nil)
   (setq iedit-aborting nil)
@@ -463,7 +470,7 @@ This is added to `post-command-hook' when undo command is executed
 in occurrences."
   (if (iedit-same-length)
       nil
-    (run-hooks 'iedit-aborting-hook))
+    (run-hooks 'iedit-lib-aborting-hook))
   (remove-hook 'post-command-hook 'iedit-post-undo t)
   (setq iedit-post-undo-hook-installed nil))
 
@@ -471,10 +478,10 @@ in occurrences."
   "Turning Iedit mode off and reset `iedit-aborting'.
 
 This is added to `post-command-hook' when aborting Iedit mode is
-decided.  `iedit-aborting-hook' is postponed after the current
+decided.  `iedit-lib-aborting-hook' is postponed after the current
 command is executed for avoiding `iedit-update-occurrences'
 is called for a removed overlay."
-  (run-hooks 'iedit-aborting-hook)
+  (run-hooks 'iedit-lib-aborting-hook)
   (remove-hook 'post-command-hook 'iedit-reset-aborting t)
   (setq iedit-aborting nil))
 

@@ -14,6 +14,7 @@ other occurrences changed in the same way, with visual feedback as you type.
  - A more intuitive way to alter all the occurrences at once
  - Visual feedback
  - Less keystrokes in most cases
+ - Preserve case optionally
 
 Normal work flow of Iedit mode is like:
 

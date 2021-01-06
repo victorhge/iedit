@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-23 15:18:05 Victor Ren>
+;; Time-stamp: <2021-01-04 13:52:50 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -483,12 +483,10 @@ Keymap used within overlays:
     (setq iedit-mode t))
   (when iedit-auto-buffering
 	(iedit-start-buffering))
+  (add-hook 'iedit-lib-aborting-hook 'iedit-done nil t)
   (iedit-lib-start)
   (run-hooks 'iedit-mode-hook)
-  (add-hook 'before-revert-hook 'iedit-done nil t)
-  (add-hook 'kbd-macro-termination-hook 'iedit-done nil t)
-  (add-hook 'change-major-mode-hook 'iedit-done nil t)
-  (add-hook 'iedit-aborting-hook 'iedit-done nil t))
+ )
 
 (defun iedit-default-occurrence()
   "This function returns a string as occurrence candidate.
@@ -592,10 +590,7 @@ the initial string globally."
   (setq iedit-initial-string-local nil)
   (setq iedit-mode nil)
   (force-mode-line-update)
-  (remove-hook 'before-revert-hook 'iedit-done t)
-  (remove-hook 'kbd-macro-termination-hook 'iedit-done t)
-  (remove-hook 'change-major-mode-hook 'iedit-done t)
-  (remove-hook 'iedit-aborting-hook 'iedit-done t)
+  (remove-hook 'iedit-lib-aborting-hook 'iedit-done t)
   (run-hooks 'iedit-mode-end-hook))
 
 (defun iedit-mode-on-action (&optional arg)
