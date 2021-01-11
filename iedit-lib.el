@@ -569,10 +569,7 @@ part to apply it to all the other occurrences."
 Apply the change to all the other occurrences. "
   (let ((iedit-updating t)
         (offset (- beg (overlay-start occurrence)))
-        (value (buffer-substring-no-properties beg end))
-		;; c-before-change is really slow. It is safe to skip change functions
-		;; for all the other occurrences
-		(inhibit-modification-hooks (memq #'c-before-change before-change-functions)))
+        (value (buffer-substring-no-properties beg end)))
     (save-excursion
 	  (iedit-move-conjoined-overlays occurrence)
 	  (when (/= beg end)
@@ -599,10 +596,7 @@ Apply the change to all the other occurrences. "
 			      (if (= 0 offset)
                                   (capitalize value)
 				value))))))
-          (iedit-move-conjoined-overlays another-occurrence))))
-	(when inhibit-modification-hooks
-	  ;; run the after change functions only once. It seems OK for c-mode
-	  (run-hook-with-args 'after-change-functions beg end change))))
+          (iedit-move-conjoined-overlays another-occurrence))))))
 
 (defun iedit-next-occurrence ()
   "Move forward to the next occurrence in the `iedit'.
