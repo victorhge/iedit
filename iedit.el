@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-06 11:14:51 Victor Ren>
+;; Time-stamp: <2021-01-13 22:39:04 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -300,6 +300,7 @@ This is like `describe-bindings', but displays only Iedit keys."
     (define-key map (kbd "M-n") 'iedit-expand-down-to-occurrence)
     (define-key map (kbd "M-G") 'iedit-apply-global-modification)
     (define-key map (kbd "M-C") 'iedit-toggle-case-sensitive)
+	(define-key map (kbd "M-S") 'iedit-toggle-search-invisible)
     map)
   "Keymap used within overlays in Iedit mode.")
 
@@ -794,6 +795,33 @@ prefix, bring the top of the region back down one occurrence."
                counter
                (iedit-printable occurrence-regexp))
       (force-mode-line-update))))
+
+(defun iedit-toggle-search-invisible ()
+  "Toggle search-invisible matching occurrences. "
+  (interactive)
+  (setq iedit-search-invisible
+        (if iedit-search-invisible
+            nil
+		  (or search-invisible 'open)))
+  (if iedit-buffering
+      (iedit-stop-buffering))
+  (let ((occurrence-string (iedit-current-occurrence-string)))
+  (when occurrence-string
+    (remove-overlays nil nil iedit-occurrence-overlay-name t)
+    (iedit-show-all)
+	(isearch-clean-overlays)
+    (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
+           (begin (car iedit-initial-region))
+           (end (cadr iedit-initial-region))
+           (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+      (message "iedit %s. %d matches for \"%s\""
+               (if iedit-search-invisible
+                   "matching invisible"
+                 "matching visible")
+               counter
+               (iedit-printable occurrence-regexp))
+	  (setq iedit-last-occurrence-local occurrence-string)
+      (force-mode-line-update)))))
 
 (provide 'iedit)
 

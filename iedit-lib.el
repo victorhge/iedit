@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-06 11:23:22 Victor Ren>
+;; Time-stamp: <2021-01-13 22:27:53 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -130,6 +130,17 @@ If no-nil, matching is case sensitive.  If nil and `case-replace'
 is no-nil, iedit try to preserve the case pattern of each
 occurrence.")
 
+(defvar iedit-search-invisible search-invisible
+  "search-invisible while matching.
+Either nil, t, or 'open.  'open means the same as t except that
+opens hidden overlays. ")
+
+(defvar iedit-lib-skip-invisible-count 0
+  "This is buffer local varible which is the number of skipped invisible occurrence. ")
+
+(defvar iedit-lib-skip-filtered-count 0
+  "This is buffer local varible which is the number of filtered occurrence. ")
+
 (defvar iedit-hiding nil
   "This is buffer local variable which indicates whether buffer lines are hided. ")
 
@@ -208,6 +219,8 @@ It replaces `inhibit-modification-hooks' which prevents calling
 (make-variable-buffer-local 'iedit-occurrence-context-lines)
 (make-variable-buffer-local 'iedit-occurrence-index)
 (make-variable-buffer-local 'iedit-lib-quit-func)
+(make-variable-buffer-local 'iedit-lib-skip-invisible-count)
+(make-variable-buffer-local 'iedit-lib-skip-filtered-count)
 
 (defconst iedit-occurrence-overlay-name 'iedit-occurrence-overlay-name)
 (defconst iedit-invisible-overlay-name 'iedit-invisible-overlay-name)
@@ -314,10 +327,13 @@ Return the number of occurrences."
   (setq iedit-aborting nil)
   (setq iedit-occurrences-overlays nil)
   (setq iedit-read-only-occurrences-overlays nil)
+  (setq iedit-lib-skip-invisible-count 0)
+  (setq iedit-lib-skip-filtered-count 0)
   ;; Find and record each occurrence's markers and add the overlay to the occurrences
   (let ((counter 0)
         (case-fold-search (not iedit-case-sensitive))
-	(length 0))
+		(search-invisible iedit-search-invisible)
+		(length 0))
     (save-excursion
       (save-window-excursion
         (goto-char end)
@@ -327,15 +343,22 @@ Return the number of occurrences."
         (while (re-search-forward occurrence-regexp end t)
           (let ((beginning (match-beginning 0))
                 (ending (match-end 0)))
-	    (if (and (> length 0) (/= (- ending beginning) length))
-		(throw 'not-same-length 'not-same-length)
-	      (setq length (- ending beginning)))
-            (if (text-property-not-all beginning ending 'read-only nil)
-                (push (iedit-make-read-only-occurrence-overlay beginning ending)
-                      iedit-read-only-occurrences-overlays)
+			(if (and (> length 0) (/= (- ending beginning) length))
+				(throw 'not-same-length 'not-same-length)
+			  (setq length (- ending beginning)))
+			(cond
+             ((text-property-not-all beginning ending 'read-only nil)
+              (push (iedit-make-read-only-occurrence-overlay beginning ending)
+                    iedit-read-only-occurrences-overlays))
+			 ((not (or (eq search-invisible t)
+					   (not (isearch-range-invisible beginning ending))))
+			  (setq iedit-lib-skip-invisible-count (1+ iedit-lib-skip-invisible-count)))
+			 ((not (funcall isearch-filter-predicate beginning ending))
+			  (setq iedit-lib-skip-filtered-count (1+ iedit-lib-skip-filtered-count)))
+			 (t
               (push (iedit-make-occurrence-overlay beginning ending)
-                    iedit-occurrences-overlays))
-            (setq counter (1+ counter))))))
+                    iedit-occurrences-overlays)
+			  (setq counter (1+ counter))))))))
     (iedit-update-index)
     counter))
 
@@ -420,6 +443,8 @@ there are."
   "Clean up occurrence overlay, invisible overlay and local variables."
   (remove-hook 'post-command-hook 'iedit-update-occurrences-2 t)
   (remove-overlays nil nil iedit-occurrence-overlay-name t)
+  ;; Close overlays opened by `isearch-range-invisible'
+  (isearch-clean-overlays)
   (iedit-show-all)
   (remove-hook 'before-revert-hook iedit-lib-quit-func t)
   (remove-hook 'kbd-macro-termination-hook iedit-lib-quit-func t)

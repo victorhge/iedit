@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2020-11-21 21:09:39 Victor Ren>
+;; Time-stamp: <2021-01-13 23:06:19 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -440,6 +440,30 @@ fob")))))
      (iedit-next-occurrence)
      (iedit-toggle-case-sensitive)
      (should (= 1 (length iedit-occurrences-overlays))))))
+
+(ert-deftest iedit-toggle-search-invisible-test ()
+  (with-iedit-test-fixture
+"foo
+* foo
+** foo"
+   (lambda ()
+     (iedit-mode) ; turn off iedit-mode
+	 (outline-mode)
+	 (forward-line 1)
+	 (call-interactively 'outline-hide-subtree)
+	 (setq iedit-search-invisible t)
+	 (goto-char 1)
+	 (iedit-mode)
+     (should (= 3 (length iedit-occurrences-overlays)))
+	 (should (= 0 iedit-lib-skip-invisible-count))
+     (iedit-toggle-search-invisible)
+     (should (= 2 (length iedit-occurrences-overlays)))
+	 (should (null iedit-search-invisible))
+	 (should (= 1 iedit-lib-skip-invisible-count))
+	 (iedit-toggle-search-invisible)
+	 (should (= 3 (length iedit-occurrences-overlays)))
+	 (should (= 0 iedit-lib-skip-invisible-count))
+	 (should (eq 'open iedit-search-invisible)))))
 
 (ert-deftest iedit-case-preserve-test ()
   (with-iedit-test-fixture
