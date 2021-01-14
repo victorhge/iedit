@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-13 22:39:04 Victor Ren>
+;; Time-stamp: <2021-01-14 23:52:39 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -466,9 +466,6 @@ Keymap used within overlays:
 
 (defun iedit-start (occurrence-regexp beg end)
   "Start Iedit mode for the `occurrence-regexp' in the current buffer."
-  ;; enforce skip modification once, errors may happen to cause this to be
-  ;; unset.
-  (setq iedit-skip-modification-once t)
   (setq iedit-initial-region (list beg end))
   (let ((counter 0))
     (if (eq iedit-occurrence-type-local 'markup-tag)
@@ -482,8 +479,6 @@ Keymap used within overlays:
              counter
              (iedit-printable occurrence-regexp))
     (setq iedit-mode t))
-  (when iedit-auto-buffering
-	(iedit-start-buffering))
   (iedit-lib-start 'iedit-done)
   (run-hooks 'iedit-mode-hook))
 
@@ -570,8 +565,6 @@ Return the tag if succeeded, nil if failed."
   "Exit Iedit mode.
 Save the current occurrence string locally and globally.  Save
 the initial string globally."
-  (when iedit-buffering
-      (iedit-stop-buffering))
   (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
   (setq iedit-occurrence-type-global iedit-occurrence-type-local)
   (setq iedit-last-occurrence-global iedit-last-occurrence-local)
@@ -763,12 +756,9 @@ prefix, bring the top of the region back down one occurrence."
   "Restricting Iedit mode in a region."
   (if (null (iedit-find-overlay beg end 'iedit-occurrence-overlay-name exclusive))
       (iedit-done)
-    (when iedit-buffering
-      (iedit-stop-buffering))
     (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
-    (iedit-show-all)
     (iedit-cleanup-occurrences-overlays beg end exclusive)
     (if iedit-hiding
         (iedit-hide-context-lines iedit-occurrence-context-lines))
@@ -778,12 +768,9 @@ prefix, bring the top of the region back down one occurrence."
   "Toggle case-sensitive matching occurrences. "
   (interactive)
   (setq iedit-case-sensitive (not iedit-case-sensitive))
-  (if iedit-buffering
-      (iedit-stop-buffering))
   (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
   (when iedit-last-occurrence-local
-    (remove-overlays nil nil iedit-occurrence-overlay-name t)
-    (iedit-show-all)
+	(iedit-cleanup-occurrences-overlays)
     (let* ((occurrence-regexp (iedit-regexp-quote iedit-last-occurrence-local))
            (begin (car iedit-initial-region))
            (end (cadr iedit-initial-region))
@@ -803,25 +790,21 @@ prefix, bring the top of the region back down one occurrence."
         (if iedit-search-invisible
             nil
 		  (or search-invisible 'open)))
-  (if iedit-buffering
-      (iedit-stop-buffering))
   (let ((occurrence-string (iedit-current-occurrence-string)))
-  (when occurrence-string
-    (remove-overlays nil nil iedit-occurrence-overlay-name t)
-    (iedit-show-all)
-	(isearch-clean-overlays)
-    (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
-           (begin (car iedit-initial-region))
-           (end (cadr iedit-initial-region))
-           (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
-      (message "iedit %s. %d matches for \"%s\""
-               (if iedit-search-invisible
-                   "matching invisible"
-                 "matching visible")
-               counter
-               (iedit-printable occurrence-regexp))
-	  (setq iedit-last-occurrence-local occurrence-string)
-      (force-mode-line-update)))))
+	(when occurrence-string
+	  (iedit-cleanup-occurrences-overlays)
+      (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
+			 (begin (car iedit-initial-region))
+			 (end (cadr iedit-initial-region))
+			 (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+		(message "iedit %s. %d matches for \"%s\""
+				 (if iedit-search-invisible
+					 "matching invisible"
+                   "matching visible")
+				 counter
+				 (iedit-printable occurrence-regexp))
+		(setq iedit-last-occurrence-local occurrence-string)
+		(force-mode-line-update)))))
 
 (provide 'iedit)
 
