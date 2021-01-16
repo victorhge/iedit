@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-14 23:52:39 Victor Ren>
+;; Time-stamp: <2021-01-16 13:48:39 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -756,7 +756,6 @@ prefix, bring the top of the region back down one occurrence."
   "Restricting Iedit mode in a region."
   (if (null (iedit-find-overlay beg end 'iedit-occurrence-overlay-name exclusive))
       (iedit-done)
-    (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (iedit-cleanup-occurrences-overlays beg end exclusive)
@@ -768,20 +767,20 @@ prefix, bring the top of the region back down one occurrence."
   "Toggle case-sensitive matching occurrences. "
   (interactive)
   (setq iedit-case-sensitive (not iedit-case-sensitive))
-  (setq iedit-last-occurrence-local (iedit-current-occurrence-string))
-  (when iedit-last-occurrence-local
-	(iedit-cleanup-occurrences-overlays)
-    (let* ((occurrence-regexp (iedit-regexp-quote iedit-last-occurrence-local))
-           (begin (car iedit-initial-region))
-           (end (cadr iedit-initial-region))
-           (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
-      (message "iedit %s. %d matches for \"%s\""
-               (if iedit-case-sensitive
-                   "is case sensitive"
-                 "ignores case")
-               counter
-               (iedit-printable occurrence-regexp))
-      (force-mode-line-update))))
+  (let ((occurrence-string (iedit-current-occurrence-string)))
+	(when occurrence-string
+	  (iedit-cleanup-occurrences-overlays)
+      (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
+			 (begin (car iedit-initial-region))
+			 (end (cadr iedit-initial-region))
+			 (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+		(message "iedit %s. %d matches for \"%s\""
+				 (if iedit-case-sensitive
+					 "is case sensitive"
+                   "ignores case")
+				 counter
+				 (iedit-printable occurrence-regexp))
+		(force-mode-line-update)))))
 
 (defun iedit-toggle-search-invisible ()
   "Toggle search-invisible matching occurrences. "
@@ -803,7 +802,6 @@ prefix, bring the top of the region back down one occurrence."
                    "matching visible")
 				 counter
 				 (iedit-printable occurrence-regexp))
-		(setq iedit-last-occurrence-local occurrence-string)
 		(force-mode-line-update)))))
 
 (provide 'iedit)
