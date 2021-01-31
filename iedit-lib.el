@@ -200,12 +200,15 @@ occurrence.")
 It replaces `inhibit-modification-hooks' which prevents calling
 `after-change-functions'.")
 
+(defvar iedit-line-move-ignore-invisible-value nil
+  "Used to save and restore the value of `line-move-ignore-invisible'.")
+
 (make-variable-buffer-local 'iedit-updating)
 (make-variable-buffer-local 'iedit-after-change-list)
 (make-variable-buffer-local 'iedit-occurrences-overlays)
 (make-variable-buffer-local 'iedit-read-only-occurrences-overlays)
 (make-variable-buffer-local 'iedit-hiding)
-(make-local-variable 'iedit-case-sensitive)
+(make-variable-buffer-local 'iedit-case-sensitive)
 (make-variable-buffer-local 'iedit-forward-success)
 (make-variable-buffer-local 'iedit-before-modification-string)
 (make-variable-buffer-local 'iedit-before-buffering-string)
@@ -221,6 +224,7 @@ It replaces `inhibit-modification-hooks' which prevents calling
 (make-variable-buffer-local 'iedit-lib-quit-func)
 (make-variable-buffer-local 'iedit-lib-skip-invisible-count)
 (make-variable-buffer-local 'iedit-lib-skip-filtered-count)
+(make-variable-buffer-local 'iedit-line-move-ignore-invisible-value)
 
 (defconst iedit-occurrence-overlay-name 'iedit-occurrence-overlay-name)
 (defconst iedit-invisible-overlay-name 'iedit-invisible-overlay-name)
@@ -752,7 +756,7 @@ value of `iedit-occurrence-context-lines' is used for this time."
 
 (defun iedit-show-all()
   "Show hidden lines."
-  (setq line-move-ignore-invisible nil)
+  (setq-local line-move-ignore-invisible iedit-line-move-ignore-invisible-value)
   (remove-from-invisibility-spec '(iedit-invisible-overlay-name . t))
   (remove-overlays nil nil iedit-invisible-overlay-name t))
 
@@ -779,7 +783,9 @@ value of `iedit-occurrence-context-lines' is used for this time."
       (if (< prev-occurrence-end (point-max))
           (push (list prev-occurrence-end (point-max)) hidden-regions))
       (when hidden-regions
-        (set (make-local-variable 'line-move-ignore-invisible) t)
+		(setq iedit-line-move-ignore-invisible-value
+			  (buffer-local-value 'line-move-ignore-invisible (current-buffer)))
+        (setq-local line-move-ignore-invisible t)
         (add-to-invisibility-spec '(iedit-invisible-overlay-name . t))
         (dolist (region hidden-regions)
           (iedit-make-invisible-overlay (car region) (cadr region)))))
@@ -806,8 +812,9 @@ value of `iedit-occurrence-context-lines' is used for this time."
 			(push (list beginning end) hidden-regions)
 			(setq beginning (line-beginning-position)))))
 	  (when hidden-regions
-		(set (make-local-variable 'line-move-ignore-invisible) t)
-		(add-to-invisibility-spec '(iedit-invisible-overlay-name . t))
+		(setq iedit-line-move-ignore-invisible-value
+			  (buffer-local-value 'line-move-ignore-invisible (current-buffer)))
+        (setq-local line-move-ignore-invisible t)
 		(dolist (region hidden-regions)
           (iedit-make-invisible-overlay (car region) (cadr region))))
 	    ;; Value returned is for ert
@@ -1147,7 +1154,8 @@ Return nil if occurrence string is empty string."
     (iedit-stop-buffering))
   ;; Close overlays opened by `isearch-range-invisible'
   (isearch-clean-overlays)
-  (iedit-show-all)
+  (when iedit-hiding
+	(iedit-show-all))
   (if (null beg)
 	  (remove-overlays nil nil iedit-occurrence-overlay-name t)
 	(if inclusive
