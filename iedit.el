@@ -523,7 +523,7 @@ The candidate depends on the thing at point."
 (defun iedit-mark-sgml-pair ()
   "Check if the cursor is on a markup tag.
 If the cursor is on a markup tag, the position of the opening and
-closing markup tags are saved in `iedit-occurrence-overlays'
+closing markup tags are saved in `iedit-occurrences-overlays'
 temporarily.
 
 The code is adapted from

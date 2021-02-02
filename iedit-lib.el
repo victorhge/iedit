@@ -328,7 +328,6 @@ It should be set before occurrence overlay is created.")
 (defun iedit-make-occurrences-overlays (occurrence-regexp beg end)
   "Create occurrence overlays for `occurrence-regexp' in a region.
 Return the number of occurrences."
-  (setq iedit-aborting nil)
   (setq iedit-occurrences-overlays nil)
   (setq iedit-read-only-occurrences-overlays nil)
   (setq iedit-lib-skip-invisible-count 0)
@@ -354,8 +353,8 @@ Return the number of occurrences."
              ((text-property-not-all beginning ending 'read-only nil)
               (push (iedit-make-read-only-occurrence-overlay beginning ending)
                     iedit-read-only-occurrences-overlays))
-			 ((not (or (eq search-invisible t)
-					   (not (isearch-range-invisible beginning ending))))
+			 ((and (not (eq search-invisible t))
+				   (isearch-range-invisible beginning ending))
 			  (setq iedit-lib-skip-invisible-count (1+ iedit-lib-skip-invisible-count)))
 			 ((not (funcall isearch-filter-predicate beginning ending))
 			  (setq iedit-lib-skip-filtered-count (1+ iedit-lib-skip-filtered-count)))
@@ -438,6 +437,7 @@ there are."
   "Initialize the hooks."
   (when iedit-auto-buffering
 	(iedit-start-buffering))
+  (setq iedit-aborting nil)
   ;; Enforce skip modification once, errors may happen to cause this to be
   ;; unset.
   (setq iedit-skip-modification-once t)
