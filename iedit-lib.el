@@ -629,80 +629,86 @@ Apply the change to all the other occurrences. "
 				value))))))
           (iedit-move-conjoined-overlays another-occurrence))))))
 
-(defun iedit-next-occurrence ()
+(defun iedit-next-occurrence (&optional arg)
   "Move forward to the next occurrence in the `iedit'.
-If the point is already in the last occurrences, you are asked to type
+Move ARG occurrences forward (backward if ARG is negative).
+Interactively, ARG is the numeric prefix argument.
+If ARG is omitted or nil, move 1 occurrences forward.
+If point reaches the last occurrences, you are asked to type
 another `iedit-next-occurrence', it starts again from the
-beginning of the buffer."
-  (interactive)
-  (let* ((pos (point))
-		 (ov (iedit-find-current-occurrence-overlay)))
-    (if ov
-		(if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
-			(setq pos (overlay-end ov)) ; conjoined overlay
-		  ;; from inside
-		  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
-		  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
-	  ;; from outside
-	  (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+beginning of the buffer. If used with prefix argument, wrapping
+from last to first occurrence will cost one repetition."
+  (interactive "p")
+  (cond ((< arg 0) (iedit-prev-occurrence (abs arg)))
+        ((> arg 0)
+         (dotimes (i arg)
+           (let* ((pos (point))
+                  (ov (iedit-find-current-occurrence-overlay)))
+             (if ov
+                 (if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
+                     (setq pos (overlay-end ov)) ; conjoined overlay
+                   ;; from inside
+                   (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name))
+                   (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
+               ;; from outside
+               (setq pos (next-single-char-property-change pos 'iedit-occurrence-overlay-name)))
 
-    (if (/= pos (point-max))
-        (setq iedit-forward-success t)
-      (if (and iedit-forward-success ov)
-          (progn (message "This is the last occurrence.")
-                 (setq iedit-forward-success nil))
-        (progn
-          (if (get-char-property (point-min) 'iedit-occurrence-overlay-name)
-              (setq pos (point-min))
-            (setq pos (next-single-char-property-change
-                       (point-min)
-                       'iedit-occurrence-overlay-name)))
-          (setq iedit-forward-success t)
-          (message "Located the first occurrence."))))
-    (when iedit-forward-success
-      (iedit-update-index pos)
-      (goto-char pos))))
+             (if (/= pos (point-max))
+                 (setq iedit-forward-success t)
+               (if (and iedit-forward-success ov)
+                   (progn (message "This is the last occurrence.")
+                          (setq iedit-forward-success nil))
+                 (progn
+                   (if (get-char-property (point-min) 'iedit-occurrence-overlay-name)
+                       (setq pos (point-min))
+                     (setq pos (next-single-char-property-change
+                                (point-min)
+                                'iedit-occurrence-overlay-name)))
+                   (setq iedit-forward-success t)
+                   (message "Located the first occurrence."))))
+             (when iedit-forward-success
+               (iedit-update-index pos)
+               (goto-char pos)))))))
 
-(defun iedit-prev-occurrence ()
+(defun iedit-prev-occurrence (&optional arg)
   "Move backward to the previous occurrence in the `iedit'.
-If the point is already in the first occurrences, you are asked to type
-another `iedit-prev-occurrence', it starts again from the end of
-the buffer."
-  (interactive)
-  (let ((pos (point))
-		(ov (iedit-find-current-occurrence-overlay))
-		(previous-overlay))
-	(when (/= pos (point-min))
-	  (when ov (setq pos (overlay-start ov)))
-	  (if (and ov
-			   (setq previous-overlay (iedit-find-overlay-at-point (1- pos) 'iedit-occurrence-overlay-name)))
-		  (setq pos (overlay-start previous-overlay)) ;conjoined
-		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
-		(setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))))
-    ;; At the start of the first occurrence
-    (if (or (and (eq pos (point-min))
-                 (not (get-char-property (point-min) 'iedit-occurrence-overlay-name)))
-            (and (eq (point) (point-min))
-                 ov))
-        (if (and iedit-forward-success ov)
-            (progn (message "This is the first occurrence.")
-                   (setq iedit-forward-success nil))
-          (progn
-            (setq pos (iedit-last-occurrence))
-            (setq iedit-forward-success t)
-            (message "Located the last occurrence.")))
-      (setq iedit-forward-success t))
-    (when iedit-forward-success
-      (iedit-update-index pos)
-      (goto-char pos))))
-
-(defun iedit-goto-first-occurrence ()
-  "Move to the first occurrence."
-  (interactive)
-  (goto-char (iedit-first-occurrence))
-  (setq iedit-forward-success t)
-  (setq iedit-occurrence-index 1)
-  (message "Located the first occurrence."))
+Move ARG occurrences backward (forward if ARG is negative).
+Interactively, ARG is the numeric prefix argument.
+If ARG is omitted or nil, move 1 occurrences back.
+If point reaches the first occurrences, you are asked to type
+another `iedit-prev-occurrence', it starts again from the
+end of the buffer. If used with prefix argument, wrapping
+from first to last occurrence will cost one repetition."
+  (interactive "p")
+  (cond ((< arg 0) (iedit-next-occurrence (abs arg)))
+        ((> arg 0)
+         (dotimes (i arg)
+           (let ((pos (point))
+                 (ov (iedit-find-current-occurrence-overlay))
+                 (previous-overlay))
+             (when (/= pos (point-min))
+               (when ov (setq pos (overlay-start ov)))
+               (if (and ov
+                        (setq previous-overlay (iedit-find-overlay-at-point (1- pos) 'iedit-occurrence-overlay-name)))
+                   (setq pos (overlay-start previous-overlay)) ;conjoined
+                 (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))
+                 (setq pos (previous-single-char-property-change pos 'iedit-occurrence-overlay-name))))
+             ;; At the start of the first occurrence
+             (if (or (and (eq pos (point-min))
+                          (not (get-char-property (point-min) 'iedit-occurrence-overlay-name)))
+                     (and (eq (point) (point-min))
+                          ov))
+                 (if (and iedit-forward-success ov)
+                     (progn (message "This is the first occurrence.")
+                            (setq iedit-forward-success nil))
+                   (progn
+                     (setq pos (iedit-last-occurrence))
+                     (setq iedit-forward-success t)
+                     (message "Located the last occurrence.")))
+               (setq iedit-forward-success t))
+             (when iedit-forward-success
+               (iedit-update-index pos)
+               (goto-char pos)))))))
 
 (defun iedit-first-occurrence ()
   "return the position of the first occurrence."
