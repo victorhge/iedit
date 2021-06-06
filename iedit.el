@@ -1,6 +1,6 @@
 ;;; iedit.el --- Edit multiple regions in the same way simultaneously.
 
-;; Copyright (C) 2010 - 2019, 2020 Victor Ren
+;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
 ;; Time-stamp: <2021-01-16 13:48:39 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
@@ -119,6 +119,12 @@ isearch-mode-map, esc-map and help-map."
 (defcustom iedit-auto-narrow nil
   "If no-nil, the buffer is narrowed temporairily if iedit-mode
 is enabled on current defun."
+  :type 'boolean
+  :group 'iedit)
+
+(defcustom iedit-auto-save-occurrence-in-kill-ring t
+  "If no-nil, save the occurrence in the kill ring when exiting
+from iedit mode."
   :type 'boolean
   :group 'iedit)
 
@@ -569,7 +575,7 @@ the initial string globally."
   (setq iedit-occurrence-type-global iedit-occurrence-type-local)
   (setq iedit-last-occurrence-global iedit-last-occurrence-local)
   (setq iedit-last-initial-string-global iedit-initial-string-local)
-  (if iedit-last-occurrence-local
+  (if (and iedit-auto-save-occurrence-in-kill-ring  iedit-last-occurrence-local)
       (kill-new iedit-last-occurrence-local)) ; Make occurrence the latest kill in the kill ring.
   (setq iedit-num-lines-to-expand-up 0)
   (setq iedit-num-lines-to-expand-down 0)
