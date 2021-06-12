@@ -1,7 +1,7 @@
 ;;; iedit-lib.el --- APIs for editing multiple regions in the same way
 ;;; simultaneously.
 
-;; Copyright (C) 2010 - 2019, 2020 Victor Ren
+;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
 ;; Time-stamp: <2021-01-14 23:56:53 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
@@ -716,6 +716,14 @@ from first to last occurrence will cost one repetition."
       (point-min)
     (next-single-char-property-change
      (point-min) 'iedit-occurrence-overlay-name)))
+
+(defun iedit-goto-first-occurrence ()
+  "Move to the first occurrence."
+  (interactive)
+  (goto-char (iedit-first-occurrence))
+  (setq iedit-forward-success t)
+  (setq iedit-occurrence-index 1)
+  (message "Located the first occurrence."))
 
 (defun iedit-goto-last-occurrence ()
   "Move to the last occurrence."
