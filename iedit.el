@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-01-16 13:48:39 Victor Ren>
+;; Time-stamp: <2021-08-05 15:18:16 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -275,18 +275,24 @@ This is like `describe-bindings', but displays only Iedit keys."
   (length iedit-occurrences-overlays))
 
 ;;; Default key bindings:
+(defun iedit-update-key-bindings (key)
+  "Update default key bindings."
+  (when (and key (not (eq key
+						  (car (where-is-internal 'iedit-mode)))))
+	(let ((key-def (lookup-key (current-global-map) key)))
+      (if key-def
+          (display-warning 'iedit (format "Iedit default key %S is occupied by %s."
+                                          (key-description key)
+                                          key-def)
+                           :warning)
+		(define-key global-map key 'iedit-mode)
+		(define-key isearch-mode-map key 'iedit-mode-from-isearch)
+		(define-key esc-map key 'iedit-execute-last-modification)
+		(define-key help-map key 'iedit-mode-toggle-on-function)
+		(message "Iedit default key binding is %s" (key-description key))))))
+
 (when (and iedit-toggle-key-default (null (where-is-internal 'iedit-mode)))
-  (let ((key-def (lookup-key (current-global-map) iedit-toggle-key-default)))
-    (if key-def
-        (display-warning 'iedit (format "Iedit default key %S is occupied by %s."
-                                        (key-description iedit-toggle-key-default)
-                                        key-def)
-                         :warning)
-      (define-key global-map iedit-toggle-key-default 'iedit-mode)
-      (define-key isearch-mode-map iedit-toggle-key-default 'iedit-mode-from-isearch)
-      (define-key esc-map iedit-toggle-key-default 'iedit-execute-last-modification)
-      (define-key help-map iedit-toggle-key-default 'iedit-mode-toggle-on-function)
-      (message "Iedit default key binding is %s" (key-description iedit-toggle-key-default)))))
+  (iedit-update-key-bindings iedit-toggle-key-default))
 
 ;; Avoid to restore Iedit mode when restoring desktop
 (add-to-list 'desktop-minor-mode-handlers
@@ -765,6 +771,7 @@ prefix, bring the top of the region back down one occurrence."
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (iedit-cleanup-occurrences-overlays beg end exclusive)
+	(setq iedit-initial-region (list beg end exclusive))
     (if iedit-hiding
         (iedit-hide-context-lines iedit-occurrence-context-lines))
     (force-mode-line-update)))
