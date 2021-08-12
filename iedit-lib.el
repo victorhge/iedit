@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-01-14 23:56:53 Victor Ren>
+;; Time-stamp: <2021-08-12 15:17:29 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -162,7 +162,7 @@ that is going to be changed.")
 (defvar iedit-before-buffering-point nil
   "This is buffer local variable which is the point before modification.")
 
-;; `iedit-update-occurrences' gets called twice when change==0 and
+;; `iedit-record-changes' gets called twice when change==0 and
 ;; occurrence is zero-width (beg==end) -- for front and back insertion.
 (defvar iedit-skip-modification-once t
   "Variable used to skip first modification hook run when
@@ -442,7 +442,7 @@ there are."
   ;; unset.
   (setq iedit-skip-modification-once t)
   (setq iedit-lib-quit-func mode-exit-func)
-  (add-hook 'post-command-hook 'iedit-update-occurrences-2 nil t)
+  (add-hook 'post-command-hook 'iedit-update-occurrences nil t)
   (add-hook 'before-revert-hook iedit-lib-quit-func nil t)
   (add-hook 'kbd-macro-termination-hook iedit-lib-quit-func nil t)
   (add-hook 'change-major-mode-hook iedit-lib-quit-func nil t)
@@ -451,7 +451,7 @@ there are."
 (defun iedit-lib-cleanup ()
   "Clean up occurrence overlay, invisible overlay and local variables."
   (iedit-cleanup-occurrences-overlays)
-  (remove-hook 'post-command-hook 'iedit-update-occurrences-2 t)
+  (remove-hook 'post-command-hook 'iedit-update-occurrences t)
   (remove-hook 'before-revert-hook iedit-lib-quit-func t)
   (remove-hook 'kbd-macro-termination-hook iedit-lib-quit-func t)
   (remove-hook 'change-major-mode-hook iedit-lib-quit-func t)
@@ -472,9 +472,9 @@ occurrences if the user starts typing."
     (overlay-put occurrence iedit-occurrence-overlay-name t)
     (overlay-put occurrence 'face 'iedit-occurrence)
     (overlay-put occurrence 'keymap iedit-occurrence-keymap)
-    (overlay-put occurrence 'insert-in-front-hooks '(iedit-update-occurrences))
-    (overlay-put occurrence 'insert-behind-hooks '(iedit-update-occurrences))
-    (overlay-put occurrence 'modification-hooks '(iedit-update-occurrences))
+    (overlay-put occurrence 'insert-in-front-hooks '(iedit-record-changes))
+    (overlay-put occurrence 'insert-behind-hooks '(iedit-record-changes))
+    (overlay-put occurrence 'modification-hooks '(iedit-record-changes))
     (overlay-put occurrence 'priority iedit-overlay-priority)
 	;; Identify case pattern of the occurrence.
     (overlay-put occurrence 'category (if (and (not iedit-case-sensitive) case-replace)
@@ -513,7 +513,7 @@ in occurrences."
 
 This is added to `post-command-hook' when aborting Iedit mode is
 decided.  `iedit-lib-quit-func' is postponed after the current
-command is executed for avoiding `iedit-update-occurrences'
+command is executed for avoiding `iedit-record-changes'
 is called for a removed overlay."
   (iedit--quit)
   (remove-hook 'post-command-hook 'iedit-reset-aborting t)
@@ -522,13 +522,13 @@ is called for a removed overlay."
 ;; There are two ways to update all occurrences.  One is to redefine all key
 ;; stroke map for overlay, the other is to figure out three basic modifications
 ;; in the modification hook.  This function chooses the latter.
-(defun iedit-update-occurrences (occurrence after beg end &optional change)
-  "Update all occurrences.
+(defun iedit-record-changes (occurrence after beg end &optional change)
+  "Record the changes to the current occurrence.
 This modification hook is triggered when a user edits any
-occurrence and is responsible for updating all other
-occurrences. Refer to `modification-hooks' for more details.
-Current supported edits are insertion, yank, deletion and
-replacement.  If this modification is going out of the
+occurrence and is responsible for recording all the changes to
+the current occurrence.  Refer to `modification-hooks' for more
+details.  Current supported edits are insertion, yank, deletion
+and replacement.  If this modification is going out of the
 occurrence, it will abort Iedit mode."
   (if (and undo-in-progress (null iedit-after-change-list))
       ;; If the "undo" change (not part of another command) make occurrences
@@ -564,40 +564,39 @@ occurrence, it will abort Iedit mode."
 			  (let* ((inslen (- end beg))
 					 (dellen change))
 				(push (list occurrence
-							(- beg 1)			; From 1 to beg
-							(- (point-max) end) ; From end to point-max
+							(- beg (overlay-start occurrence))			; From 1 to beg
+							(- (overlay-end occurrence) end) ; From end to point-max
 							(- inslen dellen))	; changed number
 					  iedit-after-change-list)))))))))
 
-(defun iedit-update-occurrences-2 ()
-  "The second part of updating other occurrences.
-
+(defun iedit-update-occurrences ()
+  "Updating other occurrences.
 This part is running in `post-command-hook'. It combines
-`iedit-after-change-list' into one change and then call the third
-part to apply it to all the other occurrences."
+`iedit-after-change-list' into one change and apply it to all the
+other occurrences."
   (when (and (not iedit-updating) iedit-after-change-list)
-	(let ((beg (buffer-size))
+	(let ((occurrence (caar iedit-after-change-list))
+		  (beg (buffer-size))
 		  (end (buffer-size))
 		  (change 0))
 	  (dolist (mod iedit-after-change-list)
 		(setq beg (min beg (nth 1 mod)))
 		(setq end (min end (nth 2 mod)))
 		(setq change (+ change (nth 3 mod))))
-	  (let* ((begpos (1+ beg))
-			 (endpos (- (point-max) end))
+	  (let* ((begpos (+ (overlay-start occurrence) beg))
+			 (endpos (- (overlay-end occurrence) end))
 			 (inslen (- endpos begpos))
 			 (dellen (- inslen change))
 			 (endpos (+ begpos inslen)))
-		(iedit-update-occurrences-3
-		 (caar iedit-after-change-list)
+		(iedit-apply-change
+		 occurrence
 		 begpos
 		 endpos
 		 dellen)
 		(setq iedit-after-change-list nil)))))
 
-(defun iedit-update-occurrences-3 (occurrence beg end &optional change)
-  "The third part of updating occurrences.
-Apply the change to all the other occurrences. "
+(defun iedit-apply-change (occurrence beg end &optional change)
+  "Apply the change to all the other occurrences. "
   (let ((iedit-updating t)
         (offset (- beg (overlay-start occurrence)))
         (value (buffer-substring-no-properties beg end)))
