@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-08-12 13:50:27 Victor Ren>
+;; Time-stamp: <2021-12-21 17:56:10 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -586,9 +586,9 @@ fob")))))
      (iedit-toggle-buffering)
      (should (string= (buffer-string)
 "foo
- barfoo
+ foo
   barfoo
-    barfoo")))))
+    foo")))))
 
 (ert-deftest iedit-buffering-undo-test ()
   (with-iedit-test-fixture
@@ -614,6 +614,41 @@ fob")))))
  barfoo
   barfoo
     barfoo"))
+     (should (= (point) 4))
+	 (push nil buffer-undo-list)
+	 (undo 1)
+	 (should (= (point) 1))
+     (should (string= (buffer-string)
+"foo
+ foo
+  barfoo
+    foo"))
+     )))
+
+(ert-deftest iedit-buffering-quit-test ()
+  (with-iedit-test-fixture
+"foo
+ foo
+  barfoo
+    foo"
+   (lambda ()
+	 (iedit-mode)						;turnoff
+     (setq iedit-auto-buffering t)
+	 (push nil buffer-undo-list)
+	 (call-interactively 'iedit-mode)
+     (insert "bar")
+	 (run-hooks 'post-command-hook)
+     (should (string= (buffer-string)
+"barfoo
+ foo
+  barfoo
+    foo"))
+     (call-interactively 'iedit--quit)
+     (should (string= (buffer-string)
+"barfoo
+ foo
+  barfoo
+    foo"))
      (should (= (point) 4))
 	 (push nil buffer-undo-list)
 	 (undo 1)
