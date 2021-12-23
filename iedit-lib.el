@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-12-21 19:03:29 Victor Ren>
+;; Time-stamp: <2021-12-23 18:32:28 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -54,7 +54,7 @@
 
 ;;; Code:
 
-;; (eval-when-compile (require 'cl-lib))
+(eval-when-compile (require 'cl-lib))
 
 (require 'kmacro)
 
@@ -433,6 +433,7 @@ Return the start position of the new occurrence if successful."
         ))
     pos))
 
+;; todo: this function is not used yet.
 (defun iedit-add-region-as-occurrence (beg end)
   "Add region as an occurrence.
 The length of the region must the same as other occurrences if

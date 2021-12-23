@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-12-21 17:56:10 Victor Ren>
+;; Time-stamp: <2021-12-23 18:19:15 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -213,24 +213,33 @@ fob")))))
 
 (ert-deftest iedit-mode-start-from-isearch-test ()
   (with-iedit-test-fixture
-"foo
-  foo
-   barfoo
-   foo"
+"a
+(defun foo (foo bar foo)
+\"foo bar foobar\" nil)
+ (defun bar (bar foo bar)
+  \"bar foo barfoo\" nil)
+foo
+ foo"
    (lambda ()
-     (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
-     (iedit-mode)
-     (forward-line 2)
-     (isearch-mode t)
-     (isearch-process-search-char ?f)
-     (isearch-process-search-char ?o)
-     (isearch-process-search-char ?o)
-     (call-interactively 'iedit-mode-from-isearch)
-     (should (string= iedit-initial-string-local "foo"))
-     (should (= 4 (length iedit-occurrences-overlays)))
-     (iedit-mode)
-     (should (null iedit-occurrences-overlays)))))
+      (iedit-mode)
+      (emacs-lisp-mode)
+      (goto-char 5)
+      (iedit-mode)
+      (isearch-mode t)
+      (isearch-process-search-char ?f)
+      (isearch-process-search-char ?o)
+      (isearch-process-search-char ?o)
+      (iedit-mode-from-isearch 0)
+      (should (string= iedit-initial-string-local "foo"))
+      (should (= 5 (length iedit-occurrences-overlays)))
+	  (iedit-mode)
+	  (isearch-mode t)
+      (isearch-process-search-char ?f)
+      (isearch-process-search-char ?o)
+      (isearch-process-search-char ?o)
+      (iedit-mode-from-isearch)
+	  (should (= 10 (length iedit-occurrences-overlays)))
+	  )))
 
 (ert-deftest iedit-mode-start-from-isearch-regexp-test ()
   (with-iedit-test-fixture
