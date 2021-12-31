@@ -3,7 +3,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-12-28 12:46:19 Victor Ren>
+;; Time-stamp: <2022-01-01 00:43:44 skangas>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9
@@ -138,7 +138,8 @@ Either nil, t, or 'open.  'open means the same as t except that
 opens hidden overlays. ")
 
 (defvar iedit-lib-skip-invisible-count 0
-  "This is buffer local variable which is the number of skipped invisible occurrence. ")
+  "This is buffer local variable which is the number of skipped invisible
+occurrence. ")
 
 (defvar iedit-lib-skip-filtered-count 0
   "This is buffer local variable which is the number of filtered occurrence. ")
@@ -165,7 +166,8 @@ that is going to be changed.")
   "This is buffer local variable which is the point before modification.")
 
 (defvar iedit-buffering-overlay nil
-  "This is buffer local variable which is the current overlay before starting recording kmacro.")
+  "This is buffer local variable which is the current overlay before starting
+recording kmacro.")
 
 (defvar iedit-start-kmacro-offset nil
   "This is buffer local variable which is the offset from the
@@ -1005,7 +1007,8 @@ The relative position of the current occurrence is remembered."
   (message "Start recording keyboard input..."))
 
 (defun iedit-end-and-call-kmacro (arg &optional no-repeat)
-  "Call last keyboard macro, ending it first if currently being defined, apply it on all the occurrences.
+  "Call last keyboard macro, ending it first if currently being defined, apply
+it on all the occurrences.
 
 If iedit is buffering, call it only once.
 
@@ -1222,7 +1225,8 @@ Return nil if occurrence string is empty string."
     (- (overlay-end ov) (overlay-start ov))))
 
 (defun iedit-find-overlay (beg end property &optional exclusive)
-  "Return a overlay with property in region, or out of the region if EXCLUSIVE is not nil."
+  "Return a overlay with property in region, or out of the region if EXCLUSIVE is
+not nil."
   (if exclusive
       (or (iedit-find-overlay-in-region (point-min) beg property)
           (iedit-find-overlay-in-region end (point-max) property))

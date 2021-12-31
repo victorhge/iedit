@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-12-23 18:27:46 Victor Ren>
+;; Time-stamp: <2022-01-01 00:44:47 skangas>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9
@@ -184,8 +184,12 @@ use this variable:
                         (if (memq prefix-char '(?$ ?% ?@ ?*))
                             (progn
                               (setq iedit-occurrence-type-local 'regexp)
-                              (concat (regexp-quote (buffer-substring-no-properties (1- (car bound)) (cdr bound))) \"\\\\_>\"))
-                          (buffer-substring-no-properties (car bound) (cdr bound))))))))
+                              (concat (regexp-quote
+                                       (buffer-substring-no-properties
+                                        (1- (car bound)) (cdr bound)))
+                                       \"\\\\_>\"))
+                          (buffer-substring-no-properties (car bound)
+                                                          (cdr bound))))))))
 '$%@*' will be included in the occurrences in perl mode.")
 
 (defcustom iedit-mode-line
