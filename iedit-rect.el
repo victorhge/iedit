@@ -45,9 +45,8 @@
 (require 'rect) ;; kill-rectangle
 (require 'iedit-lib)
 
-(defvar iedit-rectangle-mode nil) ;; Name of the minor mode
+(defvar-local iedit-rectangle-mode nil) ;; Name of the minor mode
 
-(make-variable-buffer-local 'iedit-rectangle-mode)
 (or (assq 'iedit-rectangle-mode minor-mode-alist)
     (nconc minor-mode-alist
            (list '(iedit-rectangle-mode iedit-rectangle-mode))))
@@ -66,13 +65,11 @@
 	  (define-key rectangle-mark-mode-map  ";" 'iedit-rectangle-mode)
       (message "Iedit-rect default key binding is %s" (key-description [C-x r \;])))))
 
-(defvar iedit-rectangle nil
+(defvar-local iedit-rectangle nil
   "This buffer local variable which is the rectangle geometry if
 current mode is iedit-rect. Otherwise it is nil.
 \(car iedit-rectangle) is the top-left corner and
 \(cadr iedit-rectangle) is the bottom-right corner" )
-
-(make-variable-buffer-local 'iedit-rectangle)
 
 ;;; Define Iedit rect mode map
 (defvar iedit-rect-keymap

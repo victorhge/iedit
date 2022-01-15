@@ -116,7 +116,7 @@ isearch-mode-map, esc-map and help-map."
 (defvar iedit-mode-end-hook nil
   "Function(s) to call after terminating an iedit.")
 
-(defvar iedit-mode nil) ;; Name of the minor mode
+(defvar-local iedit-mode nil) ;; Name of the minor mode
 
 (defcustom iedit-auto-narrow nil
   "If no-nil, the buffer is narrowed temporarily if iedit-mode
@@ -130,15 +130,15 @@ from iedit mode."
   :type 'boolean
   :group 'iedit)
 
-(defvar iedit-is-narrowed nil
+(defvar iedit-is-narrowed-local nil
   "This is buffer local variable which indicates if the buffer is
   narrowed by iedit temporarily.")
 
-(defvar iedit-use-symbol-boundaries t
+(defvar-local iedit-use-symbol-boundaries t
   "If no-nil, matches have to start and end at symbol boundaries. Otherwise,
 matches starts and end at word boundaries.")
 
-(defvar iedit-occurrence-type-local 'symbol
+(defvar-local iedit-occurrence-type-local 'symbol
   "This is buffer local variable which indicates the occurrence
 type. It might be (symbol word email url markup-tag regexp selection other).")
 
@@ -146,7 +146,7 @@ type. It might be (symbol word email url markup-tag regexp selection other).")
   "This is global variable which indicates the last global occurrence
 type. It might be (symbol word email url markup-tag regexp selection other).")
 
-(defvar iedit-last-occurrence-local nil
+(defvar-local iedit-last-occurrence-local nil
   "This is buffer local variable which is the occurrence when
 Iedit mode is turned off last time.")
 
@@ -157,9 +157,10 @@ Iedit mode is turned off last time.")
 (defvar iedit-last-initial-string-global nil
   "This is a global variable which is the last initial occurrence string.")
 
-(defvar iedit-initial-string-local nil
+(defvar-local iedit-initial-string-local nil
   "This is buffer local variable which is the initial string to start Iedit mode.")
-(defvar iedit-initial-region nil
+
+(defvar-local iedit-initial-region nil
   "This is buffer local variable which is the initial region
 where Iedit mode is started from.")
 
@@ -171,7 +172,7 @@ point should be included in the replacement region.")
   "This is a global variable indicating how many lines down from
 point should be included in the replacement region.")
 
-(defvar iedit-default-occurrence-local nil
+(defvar-local iedit-default-occurrence-local nil
   "This is a function which returns a string as occurrence candidate.
 It is called in `iedit-default-occurrence'.  This buffer local
 variable can be configured in some modes.  An example of how to
@@ -199,17 +200,8 @@ use this variable:
   "Mode-line format for Iedit.
 This should be set before Iedit is loaded."
   :type 'string
+  :risky t
   :group 'iedit)
-(put 'iedit-mode-line 'risky-local-variable t)
-
-(make-variable-buffer-local 'iedit-mode)
-(make-variable-buffer-local 'iedit-use-symbol-boundaries)
-(make-variable-buffer-local 'iedit-occurrence-type-local)
-(make-variable-buffer-local 'iedit-last-occurrence-local)
-(make-variable-buffer-local 'iedit-initial-string-local)
-(make-variable-buffer-local 'iedit-initial-region)
-(make-variable-buffer-local 'iedit-default-occurrence-local)
-(make-variable-buffer-local 'iedit-is-narrowed)
 
 (or (assq 'iedit-mode minor-mode-alist)
     (nconc minor-mode-alist
