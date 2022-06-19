@@ -2,10 +2,10 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2021-01-06 11:17:35 Victor Ren>
+;; Time-stamp: <2022-01-14 12:33:45 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
-;; Version: 0.9.9.9
+;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
 ;;        https://www.emacswiki.org/emacs/Iedit
 ;; Compatibility: GNU Emacs: 22.x, 23.x, 24.x, 25.x
@@ -45,9 +45,8 @@
 (require 'rect) ;; kill-rectangle
 (require 'iedit-lib)
 
-(defvar iedit-rectangle-mode nil) ;; Name of the minor mode
+(defvar-local iedit-rectangle-mode nil) ;; Name of the minor mode
 
-(make-variable-buffer-local 'iedit-rectangle-mode)
 (or (assq 'iedit-rectangle-mode minor-mode-alist)
     (nconc minor-mode-alist
            (list '(iedit-rectangle-mode iedit-rectangle-mode))))
@@ -55,28 +54,29 @@
 
 ;;; Default key bindings:
 (when (null (where-is-internal 'iedit-rectangle-mode))
-  (let ((key-def (lookup-key ctl-x-r-map "\r")))
+  (let ((key-def (lookup-key ctl-x-r-map  ";")))
     (if key-def
         (display-warning 'iedit (format "Iedit rect default key %S is occupied by %s."
                                         (key-description [C-x r RET])
                                         key-def)
                          :warning)
-      (define-key ctl-x-r-map "\r" 'iedit-rectangle-mode)
-      (message "Iedit-rect default key binding is %s" (key-description [C-x r RET])))))
+	  (define-key ctl-x-r-map  "\r" 'iedit-rectangle-mode)
+      (define-key ctl-x-r-map  ";" 'iedit-rectangle-mode)
+	  (define-key rectangle-mark-mode-map  ";" 'iedit-rectangle-mode)
+      (message "Iedit-rect default key binding is %s" (key-description [C-x r \;])))))
 
-(defvar iedit-rectangle nil
+(defvar-local iedit-rectangle nil
   "This buffer local variable which is the rectangle geometry if
 current mode is iedit-rect. Otherwise it is nil.
 \(car iedit-rectangle) is the top-left corner and
 \(cadr iedit-rectangle) is the bottom-right corner" )
-
-(make-variable-buffer-local 'iedit-rectangle)
 
 ;;; Define Iedit rect mode map
 (defvar iedit-rect-keymap
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map iedit-occurrence-keymap-default)
     (define-key map (kbd "M-K") 'iedit-kill-rectangle)
+	(define-key map (kbd "C-;") 'iedit-rectangle-mode) ; to exit iedit-rect mode
     map)
   "Keymap used within overlays in Iedit-rect mode.")
 
@@ -102,7 +102,6 @@ Commands:
   (interactive (when (iedit-region-active)
                  (list (region-beginning)
                        (region-end))))
-
   ;; enforce skip modification once, errors may happen to cause this to be
   ;; unset.
   (setq iedit-skip-modification-once t)
@@ -110,36 +109,30 @@ Commands:
       (iedit-rectangle-done)
     (iedit-barf-if-lib-active)
     (if (and beg end)
-        (progn (setq mark-active nil)
-               (run-hooks 'deactivate-mark-hook)
-               (iedit-rectangle-start beg end))
+        (progn
+          (iedit-rectangle-start beg end))
       (error "no region available."))))
+
+(defun iedit-rectangle-line (startcol endcol)
+  (push (iedit-make-occurrence-overlay
+         (progn
+           (move-to-column startcol t)
+           (point))
+         (progn
+           (move-to-column endcol t)
+           (point)))
+        iedit-occurrences-overlays))
 
 (defun iedit-rectangle-start (beg end)
   "Start Iedit mode for the region as a rectangle."
   (barf-if-buffer-read-only)
-  (setq beg (copy-marker beg))
-  (setq end (copy-marker end t))
+  (setq iedit-rectangle (list (copy-marker beg) (copy-marker end t)))
   (setq iedit-occurrences-overlays nil)
   (setq iedit-occurrence-keymap iedit-rect-keymap)
-  (save-excursion
-    (let ((beg-col (progn (goto-char beg) (current-column)))
-          (end-col (progn (goto-char end) (current-column))))
-      (when (< end-col beg-col)
-        (cl-rotatef beg-col end-col))
-      (goto-char beg)
-      (while
-          (progn
-            (push (iedit-make-occurrence-overlay
-                   (progn
-                     (move-to-column beg-col t)
-                     (point))
-                   (progn
-                     (move-to-column end-col t)
-                     (point)))
-                  iedit-occurrences-overlays)
-            (and (< (point) end) (forward-line 1))))))
-  (setq iedit-rectangle (list beg end))
+  (goto-char
+   (apply-on-rectangle 'iedit-rectangle-line beg end))
+  (setq mark-active nil)
+  (run-hooks 'deactivate-mark-hook)
   (setq iedit-rectangle-mode
         (propertize
          (concat " Iedit-rect:"
@@ -153,8 +146,6 @@ Commands:
   "Exit Iedit mode.
 Save the current occurrence string locally and globally.  Save
 the initial string globally."
-  (when iedit-buffering
-    (iedit-stop-buffering))
   (iedit-lib-cleanup)
   (setq iedit-rectangle-mode nil)
   (force-mode-line-update))

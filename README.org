@@ -1,4 +1,4 @@
-* Iedit - Edit multiple regions in the same way simultaneously
+* Iedit - Edit multiple occurrences in the same way simultaneously
 [[http://melpa.org/#/iedit][file:http://melpa.org/packages/iedit-badge.svg]]
 [[http://stable.melpa.org/#/iedit][file:http://stable.melpa.org/packages/iedit-badge.svg]]
 
@@ -18,10 +18,11 @@ other occurrences changed in the same way, with visual feedback as you type.
 
 Normal work flow of Iedit mode is like:
 
- - Move to certain point and press C-; (The default key binding) to enable
-   `iedit-mode'.  All occurrences of a symbol, string or a region in the buffer
-   are highlighted corresponding to the thing under the point, current mark and
-   prefix argument.  Refer to the document of `iedit-mode' for details.
+ - Move point to a target by `isearch' or other moving commands
+
+ - Press C-;(The default key binding) to enable Iedit mode. The thing under
+   the point is recognized as an occurrence, and all the occurrences in the
+   buffer are highlighted
 
  - Edit one of the occurrences
    The change is applied to other occurrences simultaneously.
@@ -43,10 +44,11 @@ when in Iedit mode - it toggles hiding non-matching lines.
 
  - With digit prefix argument 0, only occurrences in current function are matched
 
- - Restricting symbols in current region can be done by pressing C-; again
-
  - Last renaming refactoring is remembered and can be applied to other buffers
    later
+
+ - Once in iedit mode, you can select a region and hit C-; again to restrict the
+   search area to the region
 
  - Restricting the search area to just the current line can be done by
    pressing M-I.

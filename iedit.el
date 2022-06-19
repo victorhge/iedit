@@ -2,10 +2,10 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2021-08-05 15:18:16 Victor Ren>
+;; Time-stamp: <2022-01-14 12:33:25 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
-;; Version: 0.9.9.9
+;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
 ;;        https://www.emacswiki.org/emacs/Iedit
 ;; Compatibility: GNU Emacs: 22.x, 23.x, 24.x, 25.x
@@ -41,10 +41,11 @@
 
 ;; Normal work flow of Iedit mode is like:
 
-;;  - Move to certain point and press C-; (The default key binding).  All
-;;    occurrences of a symbol, string or a region in the buffer are highlighted
-;;    corresponding to the thing under the point, current mark and prefix argument.
-;;    Refer to the document of `iedit-mode' for details.
+;;  - Move point to a target by `isearch' or other moving commands
+;;
+;;  - Press C-;(The default key binding) to enable Iedit mode. The thing under
+;;    the point is recognized as an occurrence, and all the occurrences in the
+;;    buffer are highlighted
 
 ;;  - Edit one of the occurrences
 ;;    The change is applied to other occurrences simultaneously.
@@ -52,7 +53,7 @@
 ;;  - Finish - by pressing C-; again
 
 ;; Many other work flows to highlight occurrences are possible, for example,
-;; activation from isearch, incremental selection and markup tag pair selection.
+;; rectangle selection, incremental selection and markup tag pair selection.
 
 ;; You can also use Iedit mode as a quick way to temporarily show only the
 ;; buffer lines that match the current text being edited.  This gives you the
@@ -66,10 +67,11 @@
 
 ;;  - With digit prefix argument 0, only occurrences in current function are matched
 
-;;  - Restricting symbols in current region can be done by pressing C-; again
-
 ;;  - Last renaming refactoring is remembered and can be applied to other buffers
 ;;    later
+
+;;  - Once in iedit mode, you can select a region and hit C-; again to restrict
+;;    the search area to the region
 
 ;;  - Restricting the search area to just the current line can be done by
 ;;    pressing M-I.
@@ -114,10 +116,10 @@ isearch-mode-map, esc-map and help-map."
 (defvar iedit-mode-end-hook nil
   "Function(s) to call after terminating an iedit.")
 
-(defvar iedit-mode nil) ;; Name of the minor mode
+(defvar-local iedit-mode nil) ;; Name of the minor mode
 
 (defcustom iedit-auto-narrow nil
-  "If no-nil, the buffer is narrowed temporairily if iedit-mode
+  "If no-nil, the buffer is narrowed temporarily if iedit-mode
 is enabled on current defun."
   :type 'boolean
   :group 'iedit)
@@ -128,15 +130,15 @@ from iedit mode."
   :type 'boolean
   :group 'iedit)
 
-(defvar iedit-is-narrowed nil
+(defvar-local iedit-is-narrowed nil
   "This is buffer local variable which indicates if the buffer is
   narrowed by iedit temporarily.")
 
-(defvar iedit-use-symbol-boundaries t
+(defvar-local iedit-use-symbol-boundaries t
   "If no-nil, matches have to start and end at symbol boundaries. Otherwise,
 matches starts and end at word boundaries.")
 
-(defvar iedit-occurrence-type-local 'symbol
+(defvar-local iedit-occurrence-type-local 'symbol
   "This is buffer local variable which indicates the occurrence
 type. It might be (symbol word email url markup-tag regexp selection other).")
 
@@ -144,7 +146,7 @@ type. It might be (symbol word email url markup-tag regexp selection other).")
   "This is global variable which indicates the last global occurrence
 type. It might be (symbol word email url markup-tag regexp selection other).")
 
-(defvar iedit-last-occurrence-local nil
+(defvar-local iedit-last-occurrence-local nil
   "This is buffer local variable which is the occurrence when
 Iedit mode is turned off last time.")
 
@@ -155,9 +157,10 @@ Iedit mode is turned off last time.")
 (defvar iedit-last-initial-string-global nil
   "This is a global variable which is the last initial occurrence string.")
 
-(defvar iedit-initial-string-local nil
+(defvar-local iedit-initial-string-local nil
   "This is buffer local variable which is the initial string to start Iedit mode.")
-(defvar iedit-initial-region nil
+
+(defvar-local iedit-initial-region nil
   "This is buffer local variable which is the initial region
 where Iedit mode is started from.")
 
@@ -169,7 +172,7 @@ point should be included in the replacement region.")
   "This is a global variable indicating how many lines down from
 point should be included in the replacement region.")
 
-(defvar iedit-default-occurrence-local nil
+(defvar-local iedit-default-occurrence-local nil
   "This is a function which returns a string as occurrence candidate.
 It is called in `iedit-default-occurrence'.  This buffer local
 variable can be configured in some modes.  An example of how to
@@ -183,8 +186,12 @@ use this variable:
                         (if (memq prefix-char '(?$ ?% ?@ ?*))
                             (progn
                               (setq iedit-occurrence-type-local 'regexp)
-                              (concat (regexp-quote (buffer-substring-no-properties (1- (car bound)) (cdr bound))) \"\\\\_>\"))
-                          (buffer-substring-no-properties (car bound) (cdr bound))))))))
+                              (concat (regexp-quote
+                                       (buffer-substring-no-properties
+                                        (1- (car bound)) (cdr bound)))
+                                       \"\\\\_>\"))
+                          (buffer-substring-no-properties (car bound)
+                                                          (cdr bound))))))))
 '$%@*' will be included in the occurrences in perl mode.")
 
 (defcustom iedit-mode-line
@@ -193,17 +200,8 @@ use this variable:
   "Mode-line format for Iedit.
 This should be set before Iedit is loaded."
   :type 'string
+  :risky t
   :group 'iedit)
-(put 'iedit-mode-line 'risky-local-variable t)
-
-(make-variable-buffer-local 'iedit-mode)
-(make-variable-buffer-local 'iedit-use-symbol-boundaries)
-(make-variable-buffer-local 'iedit-occurrence-type-local)
-(make-variable-buffer-local 'iedit-last-occurrence-local)
-(make-variable-buffer-local 'iedit-initial-string-local)
-(make-variable-buffer-local 'iedit-initial-region)
-(make-variable-buffer-local 'iedit-default-occurrence-local)
-(make-variable-buffer-local 'iedit-is-narrowed)
 
 (or (assq 'iedit-mode minor-mode-alist)
     (nconc minor-mode-alist
@@ -391,11 +389,7 @@ Keymap used within overlays:
   (if iedit-mode
       (iedit-mode-on-action arg)
     (iedit-barf-if-lib-active)
-    (let (occurrence
-          (beg (if (eq major-mode 'occur-edit-mode) ; skip the first occurrence
-                   (next-single-char-property-change 1 'read-only)
-                 (point-min)))
-          (end (point-max)))
+    (let (occurrence beg end)
       ;; Get the occurrence and iedit-occurrence-type-local
       (cond ((and arg
                   (= 4 (prefix-numeric-value arg))
@@ -414,26 +408,7 @@ Keymap used within overlays:
                (unless occurrence
                  (error "No candidate of the occurrence, cannot enable Iedit mode"))))
       ;; Get the scope
-      (when arg
-        (cond ((= 0 (prefix-numeric-value arg))
-               (save-excursion
-		 ;; Since Emacs 26.1, `mark-defun' marks the next defun if the
-		 ;; mark is active.
-		 (deactivate-mark t)
-                 (mark-defun)
-                 (setq beg (region-beginning))
-                 (setq end (region-end)))
-	       (when (and iedit-auto-narrow (not (buffer-narrowed-p)))
-		 (narrow-to-region beg end)
-		 (setq iedit-is-narrowed t)))
-              ((and (= 1 (prefix-numeric-value arg))
-                    (not (iedit-region-active)))
-               (let ((region (bounds-of-thing-at-point 'symbol)))
-                 (setq beg (car region))
-                 (setq end (cdr region))))
-              ((iedit-region-active)
-                (setq beg (region-beginning))
-                (setq end (region-end)))))
+	  (cl-multiple-value-setq (beg end) (iedit--get-scope arg))
       (setq mark-active nil)
       (run-hooks 'deactivate-mark-hook)
       (setq iedit-initial-string-local occurrence)
@@ -444,37 +419,70 @@ Keymap used within overlays:
 
 (unless (boundp 'isearch-regexp-function)
   (defvaralias 'isearch-regexp-function 'isearch-word))
-(defun iedit-mode-from-isearch (regexp)
+
+;;;###autoload
+(defun iedit-mode-from-isearch (&optional arg)
   "Start Iedit mode using last search string as the regexp."
-  (interactive
-   (let ((regexp (cond
-		  ((functionp isearch-regexp-function)
+  (interactive "P")
+  (or isearch-success
+      (error "No match" ))
+  (let ((regexp (cond
+				  ((functionp isearch-regexp-function)
                    (funcall isearch-regexp-function isearch-string))
                   (isearch-regexp-function (word-search-regexp isearch-string))
                   (isearch-regexp isearch-string)
-                  (t (regexp-quote isearch-string)))))
-     (list regexp)))
-  (or isearch-success
-      (error "No match" ))
-  (if (or isearch-regexp isearch-regexp-function)
-      nil
-    (setq iedit-initial-string-local isearch-string))
-  (let ((iedit-case-sensitive (not isearch-case-fold-search))
-	result)
+                  (t (regexp-quote isearch-string))))
+		(iedit-case-sensitive (not isearch-case-fold-search))
+		result
+		beg
+		end)
+	(if (or isearch-regexp isearch-regexp-function)
+		nil
+      (setq iedit-initial-string-local isearch-string))
     (isearch-exit)
+	(cl-multiple-value-setq (beg end) (iedit--get-scope arg))
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (when iedit-mode
       (iedit-lib-cleanup))
     (setq result
 	  (catch 'not-same-length
-	    (iedit-start regexp (point-min) (point-max))))
+	    (iedit-start regexp beg end)))
     (cond ((not iedit-occurrences-overlays)
            (message "No matches found for %s" regexp)
            (iedit-done))
           ((equal result 'not-same-length)
            (message "Matches are not the same length.")
            (iedit-done)))))
+
+(defun iedit--get-scope (arg)
+  "Return a region according to the prefix argument."
+  (let ((beg (if (eq major-mode 'occur-edit-mode) ; skip the first occurrence
+				 (next-single-char-property-change 1 'read-only)
+               (point-min)))
+		(end (point-max)))
+	(when arg
+	  (cond
+	   ((= 0 (prefix-numeric-value arg))
+		(save-excursion
+		  ;; Since Emacs 26.1, `mark-defun' marks the next defun if the
+		  ;; mark is active.
+		  (deactivate-mark t)
+          (mark-defun)
+          (setq beg (region-beginning))
+          (setq end (region-end)))
+		(when (and iedit-auto-narrow (not (buffer-narrowed-p)))
+		  (narrow-to-region beg end)
+		  (setq iedit-is-narrowed t)))
+	   ((and (= 1 (prefix-numeric-value arg))
+             (not (iedit-region-active)))
+		(let ((region (bounds-of-thing-at-point 'symbol)))
+          (setq beg (car region))
+          (setq end (cdr region))))
+	   ((iedit-region-active)
+		(setq beg (region-beginning))
+		(setq end (region-end)))))
+	(list beg end)))
 
 (defun iedit-start (occurrence-regexp beg end)
   "Start Iedit mode for the `occurrence-regexp' in the current buffer."
@@ -613,6 +621,7 @@ the initial string globally."
 	  (iedit-done)
 	(iedit-mode 0)))
 
+;;;###autoload
 (defun iedit-execute-last-modification (&optional arg)
   "Apply last modification in Iedit mode to the current buffer or an active region."
   (interactive "*P")

@@ -1,3 +1,4 @@
 *.elc
 .bzr
 .bzrignore
+iedit-autoloads.el
