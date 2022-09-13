@@ -902,29 +902,78 @@ FORMAT."
 			  (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
 			(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
 
+(defvar iedit-replace-occurrences-history nil)
+
 ;;; Don't downcase from-string to allow case freedom!
-(defun iedit-replace-occurrences(&optional to-string)
-  "Replace occurrences with STRING."
+(defun iedit-replace-occurrences (&optional to-string)
+  "Replace occurrences with TO-STRING.
+
+When called interactively ask for TO-STRING.
+Argument TO-STRING can be a plain string or a symbolic expression to
+be evaled, in this case the expression has to be prefixed with
+\"\\,\". The from-string can be used in the sexp with the special
+placeholder \"\\&\"."
   (interactive "*")
   (iedit-barf-if-buffering)
   (let* ((ov (iedit-find-current-occurrence-overlay))
          (offset (- (point) (overlay-start ov)))
-         (from-string (buffer-substring-no-properties
-                       (overlay-start ov)
-                       (overlay-end ov)))
-         (to-string (if (not to-string)
-			(read-string "Replace with: "
-				     nil nil
-				     from-string
-				     nil)
-                      to-string)))
+         from-string
+         (to-string (or to-string
+			(iedit-read-string
+                         "Replace with: "
+                         'iedit-replace-occurrences-history
+			 from-string)))
+         (count (length iedit-occurrences-overlays)))
     (iedit-apply-on-occurrences
      (lambda (beg end from-string to-string)
        (goto-char beg)
+       (setq from-string
+             (buffer-substring-no-properties beg end))
        (search-forward from-string end)
-       (replace-match to-string (not (and (not iedit-case-sensitive) case-replace))))
-     from-string to-string)
+       (replace-match (iedit-eval-string to-string from-string count)
+                      (not (and (not iedit-case-sensitive)
+                                case-replace)))
+       (cl-decf count))
+       from-string to-string)
     (goto-char (+ (overlay-start ov) offset))))
+
+(defun iedit-read-string (prompt &optional history default)
+  "Read a string from the minibuffer, prompting with string PROMPT.
+
+Same as `read-string' but allow entering a sexp with completion on
+lisp symbols.  Always return a string i.e. sexps are not `read'."
+  (minibuffer-with-setup-hook
+      (lambda ()
+        (add-hook 'completion-at-point-functions
+                  #'elisp-completion-at-point nil t)
+        (run-hooks 'eval-expression-minibuffer-setup-hook))
+    (let ((map (make-sparse-keymap)))
+      (set-keymap-parent map minibuffer-local-map)
+      (define-key map (kbd "TAB") #'completion-at-point)
+      (read-from-minibuffer prompt nil map nil history default))))
+
+(defun iedit-eval-string (string default &optional count)
+  "Maybe eval STRING if it is a sexp otherwise return STRING unmodified.
+
+STRING is recognized as a sexp if it is prefixed with \"\\,\".
+When character \"\\&\" and \"\\#\" are found in sexp they are replaced
+respectively by DEFAULT and COUNT."
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-min))
+    (save-match-data
+      (if (looking-at "\\\\,")
+          (progn
+            (goto-char (match-end 0))
+            (save-excursion
+              (while (re-search-forward "\\\\&" nil t)
+                (replace-match (format "\"%s\"" default))))
+            (when count
+              (save-excursion
+                (while (re-search-forward "\\\\#" nil t)
+                  (replace-match (format "\"%d\"" count)))))
+            (eval (read (current-buffer)) t))
+        (buffer-string)))))
 
 (defun iedit-blank-occurrences()
   "Replace occurrences with blank spaces."
