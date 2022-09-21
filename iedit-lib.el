@@ -944,6 +944,7 @@ Same as `read-string' but allow entering a sexp with completion on
 lisp symbols.  Always return a string i.e. sexps are not `read'."
   (minibuffer-with-setup-hook
       (lambda ()
+        (set-syntax-table emacs-lisp-mode-syntax-table)
         (add-hook 'completion-at-point-functions
                   #'elisp-completion-at-point nil t)
         (run-hooks 'eval-expression-minibuffer-setup-hook))
