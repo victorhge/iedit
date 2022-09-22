@@ -972,7 +972,7 @@ respectively by DEFAULT and COUNT."
             (when count
               (save-excursion
                 (while (re-search-forward "\\\\#" nil t)
-                  (replace-match (format "\"%d\"" count)))))
+                  (replace-match (format "%d" count)))))
             (eval (read (current-buffer)) t))
         (buffer-string)))))
 
