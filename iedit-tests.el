@@ -1,6 +1,6 @@
 ;;; iedit-tests.el --- iedit's automatic-tests
 
-;; Copyright (C) 2010 - 2019, 2020 Victor Ren
+;; Copyright (C) 2010 - 2019, 2020, 2022 Victor Ren
 
 ;; Time-stamp: <2022-01-14 12:33:56 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
@@ -30,10 +30,12 @@
 ;; This file is part of iedit.
 
 ;;; Code:
+
 (require 'ert)
 (require 'iedit)
 (require 'iedit-rect)
 (require 'elp)
+(require 'sgml-mode)
 
 (ert-deftest iedit-batch-compile-test ()
   (with-temp-buffer
@@ -74,12 +76,14 @@ Iedit-rect default key binding is <C-x> <r> <;>
 (defun with-iedit-test-fixture (input-buffer-string body)
   "iedit test fixture"
   (let ((old-transient-mark-mode transient-mark-mode)
-        (old-iedit-transient-sensitive iedit-transient-mark-sensitive))
+        (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
+		(old-iedit-auto-buffering iedit-auto-buffering))
     (unwind-protect
         (progn
           (with-iedit-test-buffer "* iedit transient mark *"
             (transient-mark-mode t)
             (setq iedit-transient-mark-sensitive t)
+			(setq iedit-auto-buffering nil)
 			(setq iedit-case-sensitive t)
             (insert input-buffer-string)
             (goto-char 1)
@@ -87,6 +91,7 @@ Iedit-rect default key binding is <C-x> <r> <;>
             (funcall body))
           (with-iedit-test-buffer "* iedit NO transient mark *"
             (setq iedit-transient-mark-sensitive nil)
+			(setq iedit-auto-buffering nil)
 			(setq iedit-case-sensitive t)
             (transient-mark-mode -1)
             (insert input-buffer-string)
@@ -94,7 +99,8 @@ Iedit-rect default key binding is <C-x> <r> <;>
             (iedit-mode)
             (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
-      (setq iedit-transient-mark-sensitive old-transient-mark-mode))))
+      (setq iedit-transient-mark-sensitive old-transient-mark-mode)
+	  (setq iedit-auto-buffering old-iedit-auto-buffering))))
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
