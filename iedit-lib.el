@@ -1,7 +1,7 @@
 ;;; iedit-lib.el --- APIs for editing multiple regions in the same way
 ;;; simultaneously.
 
-;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
+;; Copyright (C) 2010 - 2022 Victor Ren
 
 ;; Time-stamp: <2022-01-14 12:33:36 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
@@ -854,6 +854,24 @@ value of `iedit-occurrence-context-lines' is used for this time."
         (dolist (occurrence iedit-occurrences-overlays)
           (apply function (overlay-start occurrence) (overlay-end occurrence) args)))))
 
+(defun iedit-apply-on-occurrences-in-seq (function &rest args)
+  "Call function for each occurrence in sequence."
+  (let ((iedit-updating t))
+    (save-excursion
+	  (goto-char (iedit-first-occurrence))
+	  (cl-loop for counter from 0
+			   for ov = (iedit-find-current-occurrence-overlay)
+			   while (/= (point) (point-max))
+			   do (progn
+					(apply function ov counter args)
+					(iedit-move-conjoined-overlays ov)
+					;; goto the beginning of the next occurrence overlay
+					(if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
+						(goto-char (overlay-end ov)) ; conjoined overlay
+					  (when (< (point) (overlay-end ov))
+						(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
+					  (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
+
 (defun iedit-upcase-occurrences ()
   "Convert occurrences to upper case."
   (interactive "*")
@@ -883,47 +901,47 @@ FORMAT."
 				nil nil iedit-increment-format-string)))
 	 (list 1 iedit-increment-format-string)))
   (iedit-barf-if-buffering)
-  (let ((number start-at)
-        (iedit-updating t))
-    (save-excursion
-	  (goto-char (iedit-first-occurrence))
-	  (cl-loop for counter from number
-			   for ov = (iedit-find-current-occurrence-overlay)
-			   while (/= (point) (point-max))
-			   do (progn
-		  (if (re-search-forward "\\\\#" (overlay-end ov) t)
-			  (replace-match (format format-string counter) t)
-			(insert (format format-string counter)))
-		  (iedit-move-conjoined-overlays ov)
-		  ;; goto the beginning of the next occurrence overlay
-		  (if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
-			  (goto-char (overlay-end ov)) ; conjoined overlay
-			(when (< (point) (overlay-end ov))
-			  (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
-			(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
+  (iedit-apply-on-occurrences-in-seq
+   (lambda (ov count start-at)
+	 (let ((counter (+ count start-at)))
+       (goto-char (overlay-start ov))
+	   (if (re-search-forward "\\\\#" (overlay-end ov) t)
+		   (replace-match (format format-string counter) t)
+		 (insert (format format-string counter)))))
+   start-at))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
-  "Replace occurrences with STRING."
+  "Replace occurrences with TO-STRING.
+
+With a prefix arguement, TO-STRING needs not to be constant. The
+things like `\\,' `\\&' `\\#' can be used in TO-STRING, the same
+way as `replace-regexp'.  Refer to the document of
+`replace-string' and `replace-regexp' for the details about
+TO-STRING."
   (interactive "*")
   (iedit-barf-if-buffering)
   (let* ((ov (iedit-find-current-occurrence-overlay))
          (offset (- (point) (overlay-start ov)))
-         (from-string (buffer-substring-no-properties
-                       (overlay-start ov)
-                       (overlay-end ov)))
+		 (literal (not current-prefix-arg))
          (to-string (if (not to-string)
-			(read-string "Replace with: "
-				     nil nil
-				     from-string
-				     nil)
-                      to-string)))
-    (iedit-apply-on-occurrences
-     (lambda (beg end from-string to-string)
-       (goto-char beg)
-       (search-forward from-string end)
-       (replace-match to-string (not (and (not iedit-case-sensitive) case-replace))))
-     from-string to-string)
+						(query-replace-read-to "occurrences"
+											   "Replace"
+											   (not literal))
+					  to-string)))
+    (iedit-apply-on-occurrences-in-seq
+     (lambda (ov count to-string literal)
+       (goto-char (overlay-start ov))
+       (search-forward (buffer-substring-no-properties
+						(overlay-start ov)
+						(overlay-end ov))
+					   (overlay-end ov))
+       (replace-match (if literal
+						  to-string
+						(funcall (car to-string) (cdr to-string) count))
+					  (not (and (not iedit-case-sensitive) case-replace))
+					  literal))
+     to-string literal)
     (goto-char (+ (overlay-start ov) offset))))
 
 (defun iedit-blank-occurrences()

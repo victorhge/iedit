@@ -1,6 +1,6 @@
 ;;; iedit-tests.el --- iedit's automatic-tests
 
-;; Copyright (C) 2010 - 2019, 2020, 2022 Victor Ren
+;; Copyright (C) 2010 - 2022 Victor Ren
 
 ;; Time-stamp: <2022-01-14 12:33:56 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
@@ -530,12 +530,19 @@ foo
   bar
    barfoo
    bar"))
+	 (let ((current-prefix-arg 4))
+	   (iedit-replace-occurrences (query-replace-compile-replacement "\\,(format \"%s %d\" \\& \\#)" t )))
+	 (should (string= (buffer-string)
+"bar 0
+  bar 1
+   barfoo
+   bar 2"))
      (iedit-number-occurrences 1 "%d ")
      (should (string= (buffer-string)
-"1 bar
-  2 bar
+"1 bar 0
+  2 bar 1
    barfoo
-   3 bar")))))
+   3 bar 2")))))
 
 (ert-deftest iedit-blank-occurrences-test ()
   "Test functions deal with the whole occurrences"
