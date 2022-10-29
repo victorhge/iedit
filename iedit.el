@@ -339,7 +339,7 @@ If Iedit mode is off, turn Iedit mode on.
 
 When Iedit mode is turned on, all the occurrences of the current
 region in the buffer (possibly narrowed) or a region are
-highlighted.  If one occurrence is modified, the change are
+highlighted.  If one occurrence is modified, the change is
 propagated to all other occurrences simultaneously.
 
 If region is not active, `iedit-default-occurrence' is called to
