@@ -1,8 +1,8 @@
-;;; iedit-rect.el --- visible rectangle editing support based on Iedit.
+;;; iedit-rect.el --- visible rectangle editing support based on Iedit. -*-lexical-binding: t-*-
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2022-01-14 12:33:45 Victor Ren>
+;; Time-stamp: <2025-09-25 07:48:02 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9.9

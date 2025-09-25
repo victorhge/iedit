@@ -1,9 +1,8 @@
-;;; iedit-lib.el --- APIs for editing multiple regions in the same way
-;;; simultaneously.
+;;; iedit-lib.el --- APIs for editing multiple regions in the same way simultaneously. -*-lexical-binding: t-*-
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2022-01-14 12:33:36 Victor Ren>
+;; Time-stamp: <2025-09-25 09:22:52 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9.9
@@ -134,7 +133,7 @@ occurrence.")
 
 (defvar iedit-search-invisible search-invisible
   "search-invisible while matching.
-Either nil, t, or 'open.  'open means the same as t except that
+Either nil, t, or \\='open.  \\='open means the same as t except that
 opens hidden overlays. ")
 
 (defvar-local iedit-lib-skip-invisible-count 0
@@ -617,21 +616,21 @@ other occurrences."
 		   (when (= 0 offset) (capitalize-region beg end )))))
       (dolist (another-occurrence iedit-occurrences-overlays)
         (when (not (eq another-occurrence occurrence))
-          (let* ((beginning (+ (overlay-start another-occurrence) offset))
-				 (ending (+ beginning (- end beg))))
-			(when (/= 0 change) (delete-region beginning (+ beginning change))) ;; delete
-			(when (/= beg end) ;; insert
-			  (goto-char beginning)
-			  (insert-and-inherit
-			   ;; preserve the case pattern of each occurrence
-			   (cl-case (overlay-get another-occurrence 'category)
-			     (no-change value)
-			     (all-caps
-			      (upcase value))
-			     (cap-initial
-			      (if (= 0 offset)
-                                  (capitalize value)
-				value))))))
+          (let ((beginning (+ (overlay-start another-occurrence) offset)))
+	    (when (/= 0 change)
+              (delete-region beginning (+ beginning change))) ;; delete
+	    (when (/= beg end) ;; insert
+	      (goto-char beginning)
+	      (insert-and-inherit
+	       ;; preserve the case pattern of each occurrence
+	       (cl-case (overlay-get another-occurrence 'category)
+		 (no-change value)
+		 (all-caps
+		  (upcase value))
+		 (cap-initial
+		  (if (= 0 offset)
+                      (capitalize value)
+		    value))))))
           (iedit-move-conjoined-overlays another-occurrence))))))
 
 (defun iedit-next-occurrence (&optional arg)
@@ -646,7 +645,7 @@ from last to first occurrence will cost one repetition."
   (interactive "p")
   (cond ((< arg 0) (iedit-prev-occurrence (abs arg)))
         ((> arg 0)
-         (dotimes (i arg)
+         (dotimes (_i arg)
            (let* ((pos (point))
                   (ov (iedit-find-current-occurrence-overlay)))
              (if ov
@@ -687,7 +686,7 @@ from first to last occurrence will cost one repetition."
   (interactive "p")
   (cond ((< arg 0) (iedit-next-occurrence (abs arg)))
         ((> arg 0)
-         (dotimes (i arg)
+         (dotimes (_i arg)
            (let ((pos (point))
                  (ov (iedit-find-current-occurrence-overlay))
                  (previous-overlay))
@@ -1027,14 +1026,14 @@ before calling the last keyboard macro."
 	(message "Keyboard macro applied to the occurrences.")))
 
 (defun iedit-case-pattern (beg end)
-  "Distinguish the case pattern of the text between `beg' and `end'.
+  "Distinguish the case pattern of the text between BEG and END.
 
 These case patterns are the same as the ones Emacs replace
 commands can recognized - three alternatives - all caps,
 capitalized, the others.
 
 If the text has only capital letters and has at least one
-multi letter word, it is 'all caps'. If all words are capitalized,
+multi letter word, it is \"all caps\". If all words are capitalized,
 it is capitalized.'"
   (let ((some-word nil)
 		(some-lowercase nil)

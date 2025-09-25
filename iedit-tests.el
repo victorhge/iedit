@@ -1,8 +1,8 @@
-;;; iedit-tests.el --- iedit's automatic-tests
+;;; iedit-tests.el --- iedit's automatic-tests -*-lexical-binding: t-*-
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2022-01-14 12:33:56 Victor Ren>
+;; Time-stamp: <2025-09-25 09:13:53 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -79,22 +79,22 @@ Iedit-rect default key binding is <C-x> <r> <;>
         (progn
           (with-iedit-test-buffer "* iedit transient mark *"
             (transient-mark-mode t)
-            (setq iedit-transient-mark-sensitive t)
-			(setq iedit-case-sensitive t)
+            (setq iedit-transient-mark-sensitive t
+                  iedit-case-sensitive t)
             (insert input-buffer-string)
             (goto-char 1)
             (iedit-mode)
             (funcall body))
           (with-iedit-test-buffer "* iedit NO transient mark *"
-            (setq iedit-transient-mark-sensitive nil)
-			(setq iedit-case-sensitive t)
+            (setq iedit-transient-mark-sensitive nil
+                  iedit-case-sensitive t)
             (transient-mark-mode -1)
             (insert input-buffer-string)
             (goto-char 1)
             (iedit-mode)
             (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
-      (setq iedit-transient-mark-sensitive old-transient-mark-mode))))
+      (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive))))
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
@@ -199,7 +199,7 @@ foo"
    (lambda ()
      (iedit-mode)
      (goto-char (point-min))
-     (goto-char (point-at-eol))
+     (goto-char (line-end-position))
      (iedit-mode)
      (delete-region (point) (1- (point)))
 	 (run-hooks 'post-command-hook)
@@ -373,7 +373,7 @@ foo
   1foo
    barfoo
    1foo"))
-     (backward-delete-char 1)
+     (delete-char 1)
 	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "foo
@@ -585,7 +585,7 @@ foo
     barfoo"))
      (should (= (point) 4))
      (iedit-toggle-buffering)
-     (backward-delete-char 3)
+     (delete-char 3)
      (should (string= (buffer-string)
 "foo
  barfoo
