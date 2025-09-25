@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2025-09-29 18:31:32 Victor Ren>
+;; Time-stamp: <2025-09-29 18:33:27 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9.9
@@ -623,7 +623,7 @@ the initial string globally."
 ;;;###autoload
 (defun iedit-execute-last-modification ()
   "Apply last modification in Iedit mode to the current buffer or an active region."
-  (interactive "*P")
+  (interactive "*")
   (or (and iedit-last-initial-string-global
            (not (string= iedit-last-initial-string-global iedit-last-occurrence-global)))
       (error "No modification available"))
