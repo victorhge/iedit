@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-25 10:36:12 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-25 12:08:11 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -33,7 +33,8 @@
 (require 'ert)
 (require 'iedit)
 (require 'iedit-rect)
-(require 'elp)
+(require 'elp)                 ; use: `elp-function-list'
+(require 'sgml-mode)           ; use: `sgml-electric-tag-pair-mode'
 
 (ert-deftest iedit-batch-compile-test ()
   (with-temp-buffer
