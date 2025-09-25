@@ -1,8 +1,8 @@
-;;; iedit.el --- Edit multiple regions in the same way simultaneously.
+;;; iedit.el --- Edit multiple regions in the same way simultaneously. -*-lexical-binding: t-*-
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2025-09-28 17:11:25 Victor Ren>
+;; Time-stamp: <2025-09-29 18:31:32 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9.9
@@ -105,9 +105,9 @@
 (require 'iedit-lib)
 
 (defcustom iedit-toggle-key-default (kbd "C-;")
-  "If no-nil, the key is inserted into global-map,
+  "If non-nil, the key is inserted into global-map,
 isearch-mode-map, esc-map and help-map."
-  :type 'vector
+  :type 'string
   :group 'iedit)
 
 (defvar iedit-mode-hook nil
@@ -177,22 +177,22 @@ point should be included in the replacement region.")
 It is called in `iedit-default-occurrence'.  This buffer local
 variable can be configured in some modes.  An example of how to
 use this variable:
-(add-hook 'perl-mode-hook
-          '(lambda ()
+(add-hook \\='perl-mode-hook
+          \\='(lambda ()
              (setq iedit-default-occurrence-local
-                   '(lambda ()
-                      (let* ((bound (bounds-of-thing-at-point 'symbol))
+                   \\='(lambda ()
+                      (let* ((bound (bounds-of-thing-at-point \\='symbol))
                              (prefix-char (char-after (1- (car bound)))))
-                        (if (memq prefix-char '(?$ ?% ?@ ?*))
+                        (if (memq prefix-char \\='(?$ ?% ?@ ?*))
                             (progn
-                              (setq iedit-occurrence-type-local 'regexp)
+                              (setq iedit-occurrence-type-local \\='regexp)
                               (concat (regexp-quote
                                        (buffer-substring-no-properties
                                         (1- (car bound)) (cdr bound)))
                                        \"\\\\_>\"))
                           (buffer-substring-no-properties (car bound)
                                                           (cdr bound))))))))
-'$%@*' will be included in the occurrences in perl mode.")
+\\='$%@*\\=' will be included in the occurrences in perl mode.")
 
 (defcustom iedit-mode-line
   `(" Iedit:" (:eval (format ,(propertize "%d/%d" 'face 'font-lock-warning-face)
@@ -534,9 +534,9 @@ The candidate depends on the thing at point."
 (defun iedit-regexp-quote (exp)
   "Return a regexp string."
   (cl-case iedit-occurrence-type-local
-    ('symbol (concat "\\_<" (regexp-quote exp) "\\_>"))
-    ('word   (concat "\\<" (regexp-quote exp) "\\>"))
-    ('regexp exp)
+    (symbol (concat "\\_<" (regexp-quote exp) "\\_>"))
+    (word   (concat "\\<" (regexp-quote exp) "\\>"))
+    (regexp exp)
     ( t      (regexp-quote exp))))
 
 (defun iedit-mark-sgml-pair ()
@@ -549,7 +549,7 @@ The code is adapted from
 `sgml-electric-tag-pair-before-change-function'.
 
 Return the tag if succeeded, nil if failed."
-  (condition-case err
+  (condition-case nil
   (save-excursion
     (skip-chars-backward "[:alnum:]-_.:")
     (if  (or (eq (char-before) ?<)
@@ -621,7 +621,7 @@ the initial string globally."
 	(iedit-mode 0)))
 
 ;;;###autoload
-(defun iedit-execute-last-modification (&optional arg)
+(defun iedit-execute-last-modification ()
   "Apply last modification in Iedit mode to the current buffer or an active region."
   (interactive "*P")
   (or (and iedit-last-initial-string-global

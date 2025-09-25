@@ -1,8 +1,8 @@
-;;; iedit-tests.el --- iedit's automatic-tests
+;;; iedit-tests.el --- iedit's automatic-tests -*-lexical-binding: t-*-
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-09-29 19:45:30 Victor Ren>
+;; Time-stamp: <2025-09-29 19:45:49 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -204,7 +204,7 @@ foo"
    (lambda ()
      (iedit-mode)
      (goto-char (point-min))
-     (goto-char (point-at-eol))
+     (goto-char (line-end-position))
      (iedit-mode)
      (delete-region (point) (1- (point)))
 	 (run-hooks 'post-command-hook)
@@ -378,7 +378,7 @@ foo
   1foo
    barfoo
    1foo"))
-     (backward-delete-char 1)
+     (delete-char 1)
 	 (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
 "foo
@@ -597,7 +597,7 @@ foo
     barfoo"))
      (should (= (point) 4))
      (iedit-toggle-buffering)
-     (backward-delete-char 3)
+     (delete-char 3)
      (should (string= (buffer-string)
 "foo
  barfoo
