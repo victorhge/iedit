@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-10-13 19:08:41 Victor Ren>
+;; Time-stamp: <2025-10-13 19:11:15 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9.9
@@ -190,9 +190,10 @@ Should be set in `iedit-lib-start'.")
 `iedit-post-undo' is installed in `post-command-hook'.")
 
 (defvar-local iedit-buffering nil
-  "This is buffer local variable which indicates iedit-mode is
-buffering, which means the modification to the current occurrence
-is not applied to other occurrences when it is true.")
+  "When non-nil, indicates iedit-mode is buffering.
+When iedit is buffering, modifications done to the current occurrence is
+not applied to other occurrences. The modifications will be applied to
+all other occurrences when buffering is tuned back off.")
 
 (defvar-local iedit-occurrence-context-lines 1
   "The number of lines before or after the occurrence.")
@@ -963,12 +964,12 @@ TO-STRING."
   (iedit-apply-on-occurrences 'delete-region))
 
 (defun iedit-toggle-buffering ()
-  "Toggle buffering.
-This is intended to improve iedit's response time.  If the number
-of occurrences are huge, it might be slow to update all the
-occurrences for each key stoke.  When buffering is on,
-modification is only applied to the current occurrence and will
-be applied to other occurrences when buffering is off."
+  "Toggle iedit buffering.
+This is intended to improve iedit's response time.
+If the number of occurrences is huge, it might be slow to update all
+the occurrences for each key stoke.  When buffering is on, modification
+is only applied to the current occurrence and will be applied to other
+occurrences when buffering is turned back off."
   (interactive "*")
   (if iedit-buffering
       (iedit-stop-buffering)
@@ -1307,8 +1308,8 @@ it just means mark is active."
 
 (defun iedit-barf-if-buffering()
   "Signal error if Iedit lib is buffering."
-  (or  (null iedit-buffering)
-       (error "Iedit is buffering")))
+  (when iedit-buffering
+    (error "Iedit is buffering")))
 
 (provide 'iedit-lib)
 
