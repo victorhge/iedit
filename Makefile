@@ -1,5 +1,18 @@
-# makefile for iedit.
+# MAKEFILE FILE: Makefile
+#
+# Purpose   : Controls iedit compilation and tests in a clean environment.
+# Created   : Tue Nov 24 07:51:14 2020 +0100
+# Author    : Pierre Rouleau <prouleau001@gmail.com>
+# Time-stamp: <2025-09-27 19:37:51 EDT, updated by Pierre Rouleau>
+# ----------------------------------------------------------------------------
+# Dependencies
+# ------------
+#
+# GNU Make, Unix-like shell, Emacs, ert.el
 
+# ----------------------------------------------------------------------------
+# Code
+# ----
 
 # Emacs invocation
 EMACS_COMMAND   := emacs
@@ -20,7 +33,7 @@ EL			:= $(sort $(wildcard iedit*.el))
 ELC			:= $(EL:.el=.elc)
 
 
-.PHONY: clean autoloads batch-compile install uninstall
+.PHONY: clean autoloads batch-compile install uninstall test
 
 all: clean autoloads batch-compile
 
@@ -37,6 +50,19 @@ batch-compile:
 # Remove all generated files
 clean:
 	rm -f $(ELC)
+	-rm iedit-ran-tests.tag
+
+
+# Run iedit test code
+# Use a zero-byte file to remember the tests succeeded.
+# Delete that tag file to run successful tests again
+test:	iedit-ran-tests.tag
+	@echo "To run tests again, update test file or remove the file iedit-ran-tests.tag"
+
+iedit-ran-tests.tag: iedit-tests.elc
+	@printf "***** Running Integration tests\n"
+	$(EMACS_COMMAND) --batch -L . -l ert -l iedit-tests.el -f ert-run-tests-batch-and-exit
+	touch iedit-ran-tests.tag
 
 # Make autoloads file
 autoloads:
@@ -54,3 +80,5 @@ install:
 uninstall:
 	rm -vf ${DESTDIR}*.elc
 	rm -vf ${DESTDIR}*.el
+
+# ----------------------------------------------------------------------------
