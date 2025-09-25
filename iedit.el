@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2025-09-25 07:11:34 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-25 09:30:29 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9.9
@@ -224,9 +224,9 @@ This should be set before Iedit is loaded."
   "Keymap for characters following the Help key for Iedit mode.")
 
 (make-help-screen
- iedit-help-for-help-internal
- (purecopy "Type a help option: [bkm] or ?")
- "You have typed %THIS-KEY%, the help character.  Type a Help option:
+  iedit-help-for-help-internal
+  (purecopy "Type a help option: [bkm] or ?")
+  "You have typed %THIS-KEY%, the help character.  Type a Help option:
 \(Type \\<help-map>\\[help-quit] to exit the Help command.)
 
 b           Display all Iedit key bindings.
@@ -236,7 +236,7 @@ m           Display documentation of Iedit mode.
 You can't type here other help keys available in the global help map,
 but outside of this help window when you type them in Iedit mode,
 they exit Iedit mode before displaying global help."
- iedit-help-map)
+  iedit-help-map)
 
 (defun iedit-help-for-help ()
   "Display Iedit help menu."
@@ -276,18 +276,18 @@ This is like `describe-bindings', but displays only Iedit keys."
 (defun iedit-update-key-bindings (key)
   "Update default key bindings."
   (when (and key (not (eq key
-						  (car (where-is-internal 'iedit-mode)))))
-	(let ((key-def (lookup-key (current-global-map) key)))
+                          (car (where-is-internal 'iedit-mode)))))
+    (let ((key-def (lookup-key (current-global-map) key)))
       (if key-def
           (display-warning 'iedit (format "Iedit default key %S is occupied by %s."
                                           (key-description key)
                                           key-def)
                            :warning)
-		(define-key global-map key 'iedit-mode)
-		(define-key isearch-mode-map key 'iedit-mode-from-isearch)
-		(define-key esc-map key 'iedit-execute-last-modification)
-		(define-key help-map key 'iedit-mode-toggle-on-function)
-		(message "Iedit default key binding is %s" (key-description key))))))
+        (define-key global-map key 'iedit-mode)
+        (define-key isearch-mode-map key 'iedit-mode-from-isearch)
+        (define-key esc-map key 'iedit-execute-last-modification)
+        (define-key help-map key 'iedit-mode-toggle-on-function)
+        (message "Iedit default key binding is %s" (key-description key))))))
 
 (when (and iedit-toggle-key-default (null (where-is-internal 'iedit-mode)))
   (iedit-update-key-bindings iedit-toggle-key-default))
@@ -310,7 +310,7 @@ This is like `describe-bindings', but displays only Iedit keys."
     (define-key map (kbd "M-n") 'iedit-expand-down-to-occurrence)
     (define-key map (kbd "M-G") 'iedit-apply-global-modification)
     (define-key map (kbd "M-C") 'iedit-toggle-case-sensitive)
-	(define-key map (kbd "M-S") 'iedit-toggle-search-invisible)
+    (define-key map (kbd "M-S") 'iedit-toggle-search-invisible)
     map)
   "Keymap used within overlays in Iedit mode.")
 
@@ -408,7 +408,7 @@ Keymap used within overlays:
                (unless occurrence
                  (error "No candidate of the occurrence, cannot enable Iedit mode"))))
       ;; Get the scope
-	  (cl-multiple-value-setq (beg end) (iedit--get-scope arg))
+      (cl-multiple-value-setq (beg end) (iedit--get-scope arg))
       (setq mark-active nil)
       (run-hooks 'deactivate-mark-hook)
       (setq iedit-initial-string-local occurrence)
@@ -427,27 +427,27 @@ Keymap used within overlays:
   (or isearch-success
       (error "No match" ))
   (let ((regexp (cond
-				  ((functionp isearch-regexp-function)
-                   (funcall isearch-regexp-function isearch-string))
-                  (isearch-regexp-function (word-search-regexp isearch-string))
-                  (isearch-regexp isearch-string)
-                  (t (regexp-quote isearch-string))))
-		(iedit-case-sensitive (not isearch-case-fold-search))
-		result
-		beg
-		end)
-	(if (or isearch-regexp isearch-regexp-function)
-		nil
+                 ((functionp isearch-regexp-function)
+                  (funcall isearch-regexp-function isearch-string))
+                 (isearch-regexp-function (word-search-regexp isearch-string))
+                 (isearch-regexp isearch-string)
+                 (t (regexp-quote isearch-string))))
+        (iedit-case-sensitive (not isearch-case-fold-search))
+        result
+        beg
+        end)
+    (if (or isearch-regexp isearch-regexp-function)
+        nil
       (setq iedit-initial-string-local isearch-string))
     (isearch-exit)
-	(cl-multiple-value-setq (beg end) (iedit--get-scope arg))
+    (cl-multiple-value-setq (beg end) (iedit--get-scope arg))
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (when iedit-mode
       (iedit-lib-cleanup))
     (setq result
-	  (catch 'not-same-length
-	    (iedit-start regexp beg end)))
+          (catch 'not-same-length
+            (iedit-start regexp beg end)))
     (cond ((not iedit-occurrences-overlays)
            (message "No matches found for %s" regexp)
            (iedit-done))
@@ -458,31 +458,31 @@ Keymap used within overlays:
 (defun iedit--get-scope (arg)
   "Return a region according to the prefix argument."
   (let ((beg (if (eq major-mode 'occur-edit-mode) ; skip the first occurrence
-				 (next-single-char-property-change 1 'read-only)
+                 (next-single-char-property-change 1 'read-only)
                (point-min)))
-		(end (point-max)))
-	(when arg
-	  (cond
-	   ((= 0 (prefix-numeric-value arg))
-		(save-excursion
-		  ;; Since Emacs 26.1, `mark-defun' marks the next defun if the
-		  ;; mark is active.
-		  (deactivate-mark t)
+        (end (point-max)))
+    (when arg
+      (cond
+       ((= 0 (prefix-numeric-value arg))
+        (save-excursion
+          ;; Since Emacs 26.1, `mark-defun' marks the next defun if the
+          ;; mark is active.
+          (deactivate-mark t)
           (mark-defun)
           (setq beg (region-beginning))
           (setq end (region-end)))
-		(when (and iedit-auto-narrow (not (buffer-narrowed-p)))
-		  (narrow-to-region beg end)
-		  (setq iedit-is-narrowed t)))
-	   ((and (= 1 (prefix-numeric-value arg))
+        (when (and iedit-auto-narrow (not (buffer-narrowed-p)))
+          (narrow-to-region beg end)
+          (setq iedit-is-narrowed t)))
+       ((and (= 1 (prefix-numeric-value arg))
              (not (iedit-region-active)))
-		(let ((region (bounds-of-thing-at-point 'symbol)))
+        (let ((region (bounds-of-thing-at-point 'symbol)))
           (setq beg (car region))
           (setq end (cdr region))))
-	   ((iedit-region-active)
-		(setq beg (region-beginning))
-		(setq end (region-end)))))
-	(list beg end)))
+       ((iedit-region-active)
+        (setq beg (region-beginning))
+        (setq end (region-end)))))
+    (list beg end)))
 
 (defun iedit-start (occurrence-regexp beg end)
   "Start Iedit mode for the `occurrence-regexp' in the current buffer."
@@ -551,35 +551,35 @@ The code is adapted from
 
 Return the tag if succeeded, nil if failed."
   (condition-case nil
-  (save-excursion
-    (skip-chars-backward "[:alnum:]-_.:")
-    (if  (or (eq (char-before) ?<)
-             (and (eq (char-before) ?/)
-                  (eq (char-before (1- (point))) ?<)))
-        (let* ((endp (eq (char-before) ?/))
-               (cl-start (point))
-               (cl-end (progn (skip-chars-forward "[:alnum:]-_.:") (point)))
-               (match
-                (if endp
-                    (with-no-warnings (when (sgml-skip-tag-backward 1) (forward-char 1) t))
-                  (with-syntax-table sgml-tag-syntax-table
-                    (up-list -1)
-                    (with-no-warnings (when (sgml-skip-tag-forward 1))
-                      (backward-sexp 1)
-                      (forward-char 2)
-                      t)))))
-          (when (and match
-                     (/= cl-end cl-start)
-                     (equal (buffer-substring cl-start cl-end)
-                            (buffer-substring (point)
-                                              (save-excursion
-                                                (skip-chars-forward "[:alnum:]-_.:")
-                                                (point))))
-                     (or (not endp) (eq (char-after cl-end) ?>)))
-            (push (cons cl-start cl-end) iedit-occurrences-overlays)
-            (push (cons (point) (+ (point) (- cl-end cl-start))) iedit-occurrences-overlays)
-            (buffer-substring cl-start cl-end)))))
-  (error nil)))
+      (save-excursion
+        (skip-chars-backward "[:alnum:]-_.:")
+        (if  (or (eq (char-before) ?<)
+                 (and (eq (char-before) ?/)
+                      (eq (char-before (1- (point))) ?<)))
+            (let* ((endp (eq (char-before) ?/))
+                   (cl-start (point))
+                   (cl-end (progn (skip-chars-forward "[:alnum:]-_.:") (point)))
+                   (match
+                    (if endp
+                        (with-no-warnings (when (sgml-skip-tag-backward 1) (forward-char 1) t))
+                      (with-syntax-table sgml-tag-syntax-table
+                        (up-list -1)
+                        (with-no-warnings (when (sgml-skip-tag-forward 1))
+                                          (backward-sexp 1)
+                                          (forward-char 2)
+                                          t)))))
+              (when (and match
+                         (/= cl-end cl-start)
+                         (equal (buffer-substring cl-start cl-end)
+                                (buffer-substring (point)
+                                                  (save-excursion
+                                                    (skip-chars-forward "[:alnum:]-_.:")
+                                                    (point))))
+                         (or (not endp) (eq (char-after cl-end) ?>)))
+                (push (cons cl-start cl-end) iedit-occurrences-overlays)
+                (push (cons (point) (+ (point) (- cl-end cl-start))) iedit-occurrences-overlays)
+                (buffer-substring cl-start cl-end)))))
+    (error nil)))
 
 (defun iedit-done ()
   "Exit Iedit mode.
@@ -607,19 +607,19 @@ the initial string globally."
 (defun iedit-mode-on-action (&optional arg)
   "Turn off Iedit mode or restrict it in a region if region is active."
   (cond ((iedit-region-active)
-	 (iedit-restrict-region (region-beginning) (region-end) arg))
-	((and arg
-	      (= 0 (prefix-numeric-value arg)))
-	 (iedit-restrict-function nil))
-	(t (iedit-done))))
+         (iedit-restrict-region (region-beginning) (region-end) arg))
+        ((and arg
+              (= 0 (prefix-numeric-value arg)))
+         (iedit-restrict-function nil))
+        (t (iedit-done))))
 
 ;;;###autoload
 (defun iedit-mode-toggle-on-function ()
   "Toggle Iedit mode on current function."
   (interactive)
   (if iedit-mode
-	  (iedit-done)
-	(iedit-mode 0)))
+      (iedit-done)
+    (iedit-mode 0)))
 
 ;;;###autoload
 (defun iedit-execute-last-modification ()
@@ -680,8 +680,8 @@ the initial string globally."
       (setq end (region-end)))
     (iedit-restrict-region beg end arg)
     (when (and (not arg)
-    	       iedit-auto-narrow
-    	       (not (buffer-narrowed-p)))
+               iedit-auto-narrow
+               (not (buffer-narrowed-p)))
       (narrow-to-region beg end)
       (setq iedit-is-narrowed t)))
   (message "Restricted in current function, %d matches."
@@ -746,7 +746,7 @@ prefix, bring the bottom of the region back up one occurrence."
               (1- (iedit-last-occurrence)))
              (when iedit-mode
                (goto-char (iedit-last-occurrence))))
-  (iedit-expand-to-occurrence t)))
+    (iedit-expand-to-occurrence t)))
 
 (defun iedit-expand-up-to-occurrence (&optional arg)
   "Expand the search region upwards until reaching a new occurrence.
@@ -764,11 +764,11 @@ prefix, bring the top of the region back down one occurrence."
 (defun iedit-expand-to-occurrence (forward)
   "Expand to next or previous occurrence."
   (let ((pos (iedit-add-occurrence-overlay
-                (iedit-regexp-quote (iedit-current-occurrence-string))
-                (if forward
-                    (1+ (iedit-last-occurrence))
-                  (iedit-first-occurrence))
-                forward)))
+              (iedit-regexp-quote (iedit-current-occurrence-string))
+              (if forward
+                  (1+ (iedit-last-occurrence))
+                (iedit-first-occurrence))
+              forward)))
     (when pos
       (goto-char pos)
       (force-mode-line-update))))
@@ -780,7 +780,7 @@ prefix, bring the top of the region back down one occurrence."
     (setq mark-active nil)
     (run-hooks 'deactivate-mark-hook)
     (iedit-cleanup-occurrences-overlays beg end exclusive)
-	(setq iedit-initial-region (list beg end exclusive))
+    (setq iedit-initial-region (list beg end exclusive))
     (if iedit-hiding
         (iedit-hide-context-lines iedit-occurrence-context-lines))
     (force-mode-line-update)))
@@ -790,19 +790,19 @@ prefix, bring the top of the region back down one occurrence."
   (interactive)
   (setq iedit-case-sensitive (not iedit-case-sensitive))
   (let ((occurrence-string (iedit-current-occurrence-string)))
-	(when occurrence-string
-	  (iedit-cleanup-occurrences-overlays)
+    (when occurrence-string
+      (iedit-cleanup-occurrences-overlays)
       (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
-			 (begin (car iedit-initial-region))
-			 (end (cadr iedit-initial-region))
-			 (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
-		(message "iedit %s. %d matches for \"%s\""
-				 (if iedit-case-sensitive
-					 "is case sensitive"
+             (begin (car iedit-initial-region))
+             (end (cadr iedit-initial-region))
+             (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+        (message "iedit %s. %d matches for \"%s\""
+                 (if iedit-case-sensitive
+                     "is case sensitive"
                    "ignores case")
-				 counter
-				 (iedit-printable occurrence-regexp))
-		(force-mode-line-update)))))
+                 counter
+                 (iedit-printable occurrence-regexp))
+        (force-mode-line-update)))))
 
 (defun iedit-toggle-search-invisible ()
   "Toggle search-invisible matching occurrences. "
@@ -810,21 +810,21 @@ prefix, bring the top of the region back down one occurrence."
   (setq iedit-search-invisible
         (if iedit-search-invisible
             nil
-		  (or search-invisible 'open)))
+          (or search-invisible 'open)))
   (let ((occurrence-string (iedit-current-occurrence-string)))
-	(when occurrence-string
-	  (iedit-cleanup-occurrences-overlays)
+    (when occurrence-string
+      (iedit-cleanup-occurrences-overlays)
       (let* ((occurrence-regexp (iedit-regexp-quote occurrence-string))
-			 (begin (car iedit-initial-region))
-			 (end (cadr iedit-initial-region))
-			 (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
-		(message "iedit %s. %d matches for \"%s\""
-				 (if iedit-search-invisible
-					 "matching invisible"
+             (begin (car iedit-initial-region))
+             (end (cadr iedit-initial-region))
+             (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+        (message "iedit %s. %d matches for \"%s\""
+                 (if iedit-search-invisible
+                     "matching invisible"
                    "matching visible")
-				 counter
-				 (iedit-printable occurrence-regexp))
-		(force-mode-line-update)))))
+                 counter
+                 (iedit-printable occurrence-regexp))
+        (force-mode-line-update)))))
 
 (provide 'iedit)
 

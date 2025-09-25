@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-25 09:13:53 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-25 09:29:00 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -37,15 +37,15 @@
 
 (ert-deftest iedit-batch-compile-test ()
   (with-temp-buffer
-	(cd (file-name-directory (locate-library "iedit-tests")))
-	(call-process-shell-command "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
+    (cd (file-name-directory (locate-library "iedit-tests")))
+    (call-process-shell-command "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
     (should (string= (buffer-string) "Iedit default key binding is C-;
 Iedit-rect default key binding is <C-x> <r> <;>
 "))
-	(delete-file (byte-compile-dest-file "iedit-lib.el") nil)
-	(delete-file (byte-compile-dest-file "iedit-rect.el") nil)
-	(delete-file (byte-compile-dest-file "iedit-tests.el") nil)
-	(delete-file (byte-compile-dest-file "iedit.el") nil)))
+    (delete-file (byte-compile-dest-file "iedit-lib.el") nil)
+    (delete-file (byte-compile-dest-file "iedit-rect.el") nil)
+    (delete-file (byte-compile-dest-file "iedit-tests.el") nil)
+    (delete-file (byte-compile-dest-file "iedit.el") nil)))
 
 (defmacro with-iedit-test-buffer (buffer-name &rest body)
   (declare (indent 1) (debug t))
@@ -98,7 +98,7 @@ Iedit-rect default key binding is <C-x> <r> <;>
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
@@ -115,7 +115,7 @@ Iedit-rect default key binding is <C-x> <r> <;>
 
 (ert-deftest iedit-mode-with-region-test ()
   (with-iedit-test-fixture
-"foobar
+   "foobar
  foo
  foo
  bar
@@ -162,7 +162,7 @@ foo"
 
 (ert-deftest iedit-move-conjointed-overlays-test ()
   (with-iedit-test-fixture
-"foobar
+   "foobar
  foofoofoo
  foofoo
  foo"
@@ -176,18 +176,18 @@ foo"
      (should (string= iedit-initial-string-local "foo"))
      (should (eq 'selection iedit-occurrence-type-local))
      (goto-char 1)
-	 (insert "123")
-	 (run-hooks 'post-command-hook)
+     (insert "123")
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"123foobar
+                      "123foobar
  123foo123foo123foo
  123foo123foo
  123foo"))
      (forward-char 3)
      (insert "456")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"123foo456bar
+                      "123foo456bar
  123foo456123foo456123foo456
  123foo456123foo456
  123foo456")))))
@@ -202,19 +202,19 @@ foo"
      (goto-char (line-end-position))
      (iedit-mode)
      (delete-region (point) (1- (point)))
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
                       "fo
 fo"))
      (insert "b")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
                       "fob
 fob")))))
 
 (ert-deftest iedit-mode-start-from-isearch-test ()
   (with-iedit-test-fixture
-"a
+   "a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
@@ -222,29 +222,29 @@ fob")))))
 foo
  foo"
    (lambda ()
-      (iedit-mode)
-      (emacs-lisp-mode)
-      (goto-char 5)
-      (iedit-mode)
-      (isearch-mode t)
-      (isearch-process-search-char ?f)
-      (isearch-process-search-char ?o)
-      (isearch-process-search-char ?o)
-      (iedit-mode-from-isearch 0)
-      (should (string= iedit-initial-string-local "foo"))
-      (should (= 5 (length iedit-occurrences-overlays)))
-	  (iedit-mode)
-	  (isearch-mode t)
-      (isearch-process-search-char ?f)
-      (isearch-process-search-char ?o)
-      (isearch-process-search-char ?o)
-      (iedit-mode-from-isearch)
-	  (should (= 10 (length iedit-occurrences-overlays)))
-	  )))
+     (iedit-mode)
+     (emacs-lisp-mode)
+     (goto-char 5)
+     (iedit-mode)
+     (isearch-mode t)
+     (isearch-process-search-char ?f)
+     (isearch-process-search-char ?o)
+     (isearch-process-search-char ?o)
+     (iedit-mode-from-isearch 0)
+     (should (string= iedit-initial-string-local "foo"))
+     (should (= 5 (length iedit-occurrences-overlays)))
+     (iedit-mode)
+     (isearch-mode t)
+     (isearch-process-search-char ?f)
+     (isearch-process-search-char ?o)
+     (isearch-process-search-char ?o)
+     (iedit-mode-from-isearch)
+     (should (= 10 (length iedit-occurrences-overlays)))
+     )))
 
 (ert-deftest iedit-mode-start-from-isearch-regexp-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   fobar
   foobar
   fooobar
@@ -268,11 +268,11 @@ foo
      (isearch-process-search-char ?b)
      (call-interactively 'iedit-mode-from-isearch)
      (should (= 1 (length iedit-occurrences-overlays)))
-    )))
+     )))
 
 (ert-deftest iedit-mode-last-local-occurrence-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
@@ -287,7 +287,7 @@ foo
 
 (ert-deftest iedit-mode-last-global-occurrence-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
@@ -300,12 +300,12 @@ foo
        (insert "bar foo foo")
        (goto-char 1)
        (iedit-mode 16)
-     (should (string= iedit-initial-string-local "foo"))
-     (should (= 2 (length iedit-occurrences-overlays)))))))
+       (should (string= iedit-initial-string-local "foo"))
+       (should (= 2 (length iedit-occurrences-overlays)))))))
 
 (ert-deftest iedit-execute-last-modification-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
@@ -319,7 +319,7 @@ foo
 
 (ert-deftest iedit-movement-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo "
@@ -361,45 +361,45 @@ foo
 
 (ert-deftest iedit-occurrence-update-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
    (lambda ()
      (insert "1")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"1foo
+                      "1foo
   1foo
    barfoo
    1foo"))
      (delete-char 1)
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"foo
+                      "foo
   foo
    barfoo
    foo"))
      (capitalize-word 1)
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"Foo
+                      "Foo
   Foo
    barfoo
    Foo"))
      ;; test insert from empty
      (iedit-delete-occurrences)
      (insert "1")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"1
+                      "1
   1
    barfoo
    1")))))
 
 (ert-deftest iedit-occurrence-update-with-read-only-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
@@ -410,15 +410,15 @@ foo
      (goto-char 2)
      (should-error (insert "1"))
      (should (string= (buffer-string)
-"foo
+                      "foo
   foo
    barfoo
    foo"))
      (goto-char 7)
      (insert "1")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"foo
+                      "foo
   1foo
    barfoo
    1foo"))
@@ -426,20 +426,20 @@ foo
 
 (ert-deftest iedit-aborting-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
    (lambda ()
      (kill-region (point) (+ 4 (point)))
      (should (string= (buffer-string)
-"  foo
+                      "  foo
    barfoo
    foo")))))
 
 (ert-deftest iedit-toggle-case-sensitive-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   Foo
    barfoo
    foo"
@@ -453,47 +453,47 @@ foo
 
 (ert-deftest iedit-toggle-search-invisible-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
 * foo
 ** foo"
    (lambda ()
      (iedit-mode) ; turn off iedit-mode
-	 (outline-mode)
-	 (forward-line 1)
-	 (call-interactively 'outline-hide-subtree)
-	 (setq iedit-search-invisible t)
-	 (goto-char 1)
-	 (iedit-mode)
+     (outline-mode)
+     (forward-line 1)
+     (call-interactively 'outline-hide-subtree)
+     (setq iedit-search-invisible t)
+     (goto-char 1)
+     (iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
-	 (should (= 0 iedit-lib-skip-invisible-count))
+     (should (= 0 iedit-lib-skip-invisible-count))
      (iedit-toggle-search-invisible)
      (should (= 2 (length iedit-occurrences-overlays)))
-	 (should (null iedit-search-invisible))
-	 (should (= 1 iedit-lib-skip-invisible-count))
-	 (iedit-toggle-search-invisible)
-	 (should (= 3 (length iedit-occurrences-overlays)))
-	 (should (= 0 iedit-lib-skip-invisible-count))
-	 (should (eq 'open iedit-search-invisible)))))
+     (should (null iedit-search-invisible))
+     (should (= 1 iedit-lib-skip-invisible-count))
+     (iedit-toggle-search-invisible)
+     (should (= 3 (length iedit-occurrences-overlays)))
+     (should (= 0 iedit-lib-skip-invisible-count))
+     (should (eq 'open iedit-search-invisible)))))
 
 (ert-deftest iedit-case-preserve-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
   Foo
    barFoo
    FOO"
-(lambda ()
-  (iedit-mode)
-  (goto-char 1)
-  (set-mark-command nil)
-  (forward-char 3)
-  (let ((iedit-case-sensitive nil)
-		(case-replace t))
-	(iedit-mode)
-	(goto-char 1)
-	(insert "bar")
-	(run-hooks 'post-command-hook)
-	(should (string= (buffer-string)
-"barfoo
+   (lambda ()
+     (iedit-mode)
+     (goto-char 1)
+     (set-mark-command nil)
+     (forward-char 3)
+     (let ((iedit-case-sensitive nil)
+	   (case-replace t))
+       (iedit-mode)
+       (goto-char 1)
+       (insert "bar")
+       (run-hooks 'post-command-hook)
+       (should (string= (buffer-string)
+                        "barfoo
   BarFoo
    barBarFoo
    BARFOO"))))))
@@ -501,32 +501,32 @@ foo
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-"foo
+   "foo
   foo
    barfoo
    foo"
    (lambda ()
      (iedit-upcase-occurrences)
      (should (string= (buffer-string)
-"FOO
+                      "FOO
   FOO
    barfoo
    FOO"))
      (iedit-downcase-occurrences)
      (should (string= (buffer-string)
-"foo
+                      "foo
   foo
    barfoo
    foo"))
      (iedit-replace-occurrences "bar")
      (should (string= (buffer-string)
-"bar
+                      "bar
   bar
    barfoo
    bar"))
      (iedit-number-occurrences 1 "%d ")
      (should (string= (buffer-string)
-"1 bar
+                      "1 bar
   2 bar
    barfoo
    3 bar")))))
@@ -534,7 +534,7 @@ foo
 (ert-deftest iedit-blank-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-"foo foo barfoo foo"
+   "foo foo barfoo foo"
    (lambda ()
      (iedit-blank-occurrences)
      (should (string= (buffer-string) "        barfoo    ")))))
@@ -542,7 +542,7 @@ foo
 (ert-deftest iedit-blank-occurrences-rectangle-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-"foo
+   "foo
  foo barfoo foo"
    (lambda ()
      (iedit-mode) ; turn off iedit
@@ -557,29 +557,29 @@ foo
 (ert-deftest iedit-delete-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-"foo foo barfoo foo"
+   "foo foo barfoo foo"
    (lambda ()
      (iedit-delete-occurrences)
      (should (string= (buffer-string) "  barfoo ")))))
 
 (ert-deftest iedit-toggle-buffering-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
  foo
   barfoo
     foo"
    (lambda ()
      (iedit-toggle-buffering)
      (insert "bar")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  foo
   barfoo
     foo"))
      (iedit-toggle-buffering)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  barfoo
   barfoo
     barfoo"))
@@ -587,7 +587,7 @@ foo
      (iedit-toggle-buffering)
      (delete-char 3)
      (should (string= (buffer-string)
-"foo
+                      "foo
  barfoo
   barfoo
     barfoo"))
@@ -595,41 +595,41 @@ foo
      (should (null (iedit-find-current-occurrence-overlay)))
      (iedit-toggle-buffering)
      (should (string= (buffer-string)
-"foo
+                      "foo
  foo
   barfoo
     foo")))))
 
 (ert-deftest iedit-buffering-undo-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
  foo
   barfoo
     foo"
    (lambda ()
-	 (iedit-mode)						;turnoff
+     (iedit-mode)						;turnoff
      (setq iedit-auto-buffering t)
-	 (push nil buffer-undo-list)
-	 (call-interactively 'iedit-mode)
+     (push nil buffer-undo-list)
+     (call-interactively 'iedit-mode)
      (insert "bar")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  foo
   barfoo
     foo"))
      (call-interactively 'iedit-mode)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  barfoo
   barfoo
     barfoo"))
      (should (= (point) 4))
-	 (push nil buffer-undo-list)
-	 (undo 1)
-	 (should (= (point) 1))
+     (push nil buffer-undo-list)
+     (undo 1)
+     (should (= (point) 1))
      (should (string= (buffer-string)
-"foo
+                      "foo
  foo
   barfoo
     foo"))
@@ -637,34 +637,34 @@ foo
 
 (ert-deftest iedit-buffering-quit-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
  foo
   barfoo
     foo"
    (lambda ()
-	 (iedit-mode)						;turnoff
+     (iedit-mode)						;turnoff
      (setq iedit-auto-buffering t)
-	 (push nil buffer-undo-list)
-	 (call-interactively 'iedit-mode)
+     (push nil buffer-undo-list)
+     (call-interactively 'iedit-mode)
      (insert "bar")
-	 (run-hooks 'post-command-hook)
+     (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  foo
   barfoo
     foo"))
      (call-interactively 'iedit--quit)
      (should (string= (buffer-string)
-"barfoo
+                      "barfoo
  foo
   barfoo
     foo"))
      (should (= (point) 4))
-	 (push nil buffer-undo-list)
-	 (undo 1)
-	 (should (= (point) 1))
+     (push nil buffer-undo-list)
+     (undo 1)
+     (should (= (point) 1))
      (should (string= (buffer-string)
-"foo
+                      "foo
  foo
   barfoo
     foo"))
@@ -734,24 +734,24 @@ a a a"
 
 (ert-deftest iedit-kill-rectangle-test ()
   (with-iedit-test-fixture
-"foo
+   "foo
  foo
   barfoo
     foo"
    (lambda ()
-   (iedit-mode)
-   (set-mark-command nil)
-   (goto-char 22)
-   (call-interactively 'iedit-rectangle-mode)
-   (should (iedit-same-column))
-   (should (equal (marker-position-list iedit-rectangle) '(1 22)))
-   (iedit-kill-rectangle)
-   (should (string= (buffer-string)
-"
+     (iedit-mode)
+     (set-mark-command nil)
+     (goto-char 22)
+     (call-interactively 'iedit-rectangle-mode)
+     (should (iedit-same-column))
+     (should (equal (marker-position-list iedit-rectangle) '(1 22)))
+     (iedit-kill-rectangle)
+     (should (string= (buffer-string)
+                      "
 o
 arfoo
  foo"))
- (should (equal killed-rectangle '("foo" " fo" "  b" "   "))))))
+     (should (equal killed-rectangle '("foo" " fo" "  b" "   "))))))
 
 (ert-deftest iedit-kill-rectangle-fill-extra-spaces ()
   "lines within rectangle shorter than rectangle right column
@@ -772,56 +772,56 @@ arfoo
 
 (ert-deftest iedit-restrict-defun-test ()
   (with-iedit-test-fixture
-"a
+   "a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-      (iedit-mode)
-      (emacs-lisp-mode)
-      (goto-char 5)
-      (iedit-mode)
-      (setq iedit-auto-narrow t)
-      (iedit-restrict-function)
-      (should (= 1 (length iedit-occurrences-overlays)))
-      (should (equal (buffer-narrowed-p) iedit-is-narrowed))
-      (iedit-mode)
-      (goto-char 13)
-      (setq iedit-auto-narrow nil)
-      (call-interactively 'iedit-mode-toggle-on-function)
-      (should (= 4 (length iedit-occurrences-overlays)))
-      (iedit-mode)
-      (iedit-mode)
-      (mark-defun)
-      (iedit-mode)
-      (should (= 4 (length iedit-occurrences-overlays))))))
+     (iedit-mode)
+     (emacs-lisp-mode)
+     (goto-char 5)
+     (iedit-mode)
+     (setq iedit-auto-narrow t)
+     (iedit-restrict-function)
+     (should (= 1 (length iedit-occurrences-overlays)))
+     (should (equal (buffer-narrowed-p) iedit-is-narrowed))
+     (iedit-mode)
+     (goto-char 13)
+     (setq iedit-auto-narrow nil)
+     (call-interactively 'iedit-mode-toggle-on-function)
+     (should (= 4 (length iedit-occurrences-overlays)))
+     (iedit-mode)
+     (iedit-mode)
+     (mark-defun)
+     (iedit-mode)
+     (should (= 4 (length iedit-occurrences-overlays))))))
 
 (ert-deftest iedit-transient-sensitive-test ()
   (with-iedit-test-fixture
-"a
+   "a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-      (iedit-mode)
-      (emacs-lisp-mode)
-      (setq iedit-transient-mark-sensitive t)
-      (transient-mark-mode -1)
-      (goto-char 5)
-      (iedit-mode)
-      (iedit-restrict-function)
-      (should (= 1 (length iedit-occurrences-overlays)))
-      (iedit-mode)
-      (goto-char 13)
-      (iedit-mode 0)
-      (should (= 4 (length iedit-occurrences-overlays)))
-      (iedit-mode) ;;turn off iedit mode
-      (iedit-mode)
-      (mark-defun)
-      (iedit-mode)
-      (should (= 0 (length iedit-occurrences-overlays))))))
+     (iedit-mode)
+     (emacs-lisp-mode)
+     (setq iedit-transient-mark-sensitive t)
+     (transient-mark-mode -1)
+     (goto-char 5)
+     (iedit-mode)
+     (iedit-restrict-function)
+     (should (= 1 (length iedit-occurrences-overlays)))
+     (iedit-mode)
+     (goto-char 13)
+     (iedit-mode 0)
+     (should (= 4 (length iedit-occurrences-overlays)))
+     (iedit-mode) ;;turn off iedit mode
+     (iedit-mode)
+     (mark-defun)
+     (iedit-mode)
+     (should (= 0 (length iedit-occurrences-overlays))))))
 
 (defvar iedit-printable-test-lists
   '(("" "")
@@ -901,20 +901,20 @@ foo"
 
 ;; todo add a auto performance test
 (setq elp-function-list '(;; insert-and-inherit
-                       ;; delete-region
-                       ;; goto-char
-                       ;; iedit-occurrence-update
-                       ;; buffer-substring-no-properties
-                       ;; string=
-                       re-search-forward
-                       ;; replace-match
-                       text-property-not-all
-                       iedit-make-occurrence-overlay
-                       iedit-make-occurrences-overlays
-                       match-beginning
-                       match-end
-                       push
-                       ))
+                          ;; delete-region
+                          ;; goto-char
+                          ;; iedit-occurrence-update
+                          ;; buffer-substring-no-properties
+                          ;; string=
+                          re-search-forward
+                          ;; replace-match
+                          text-property-not-all
+                          iedit-make-occurrence-overlay
+                          iedit-make-occurrences-overlays
+                          match-beginning
+                          match-end
+                          push
+                          ))
 
 
 ;;; iedit-tests.el ends here

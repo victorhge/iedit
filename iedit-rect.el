@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-25 07:48:02 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-25 09:29:09 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9.9
@@ -60,9 +60,9 @@
                                         (key-description [C-x r RET])
                                         key-def)
                          :warning)
-	  (define-key ctl-x-r-map  "\r" 'iedit-rectangle-mode)
+      (define-key ctl-x-r-map  "\r" 'iedit-rectangle-mode)
       (define-key ctl-x-r-map  ";" 'iedit-rectangle-mode)
-	  (define-key rectangle-mark-mode-map  ";" 'iedit-rectangle-mode)
+      (define-key rectangle-mark-mode-map  ";" 'iedit-rectangle-mode)
       (message "Iedit-rect default key binding is %s" (key-description [C-x r \;])))))
 
 (defvar-local iedit-rectangle nil
@@ -76,7 +76,7 @@ current mode is iedit-rect. Otherwise it is nil.
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map iedit-occurrence-keymap-default)
     (define-key map (kbd "M-K") 'iedit-kill-rectangle)
-	(define-key map (kbd "C-;") 'iedit-rectangle-mode) ; to exit iedit-rect mode
+    (define-key map (kbd "C-;") 'iedit-rectangle-mode) ; to exit iedit-rect mode
     map)
   "Keymap used within overlays in Iedit-rect mode.")
 
