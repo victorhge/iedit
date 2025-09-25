@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-10-13 19:08:51 Victor Ren>
+;; Time-stamp: <2025-10-13 19:10:12 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -75,7 +75,8 @@
   "iedit test fixture"
   (let ((old-transient-mark-mode transient-mark-mode)
         (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
-        (old-iedit-auto-buffering iedit-auto-buffering))
+        (old-iedit-auto-buffering iedit-auto-buffering)
+        (old-iedit-case-sensitive iedit-case-sensitive))
     (unwind-protect
         (progn
           (with-iedit-test-buffer "* iedit transient mark *"
@@ -98,7 +99,8 @@
 								  (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
       (setq iedit-transient-mark-sensitive old-transient-mark-mode)
-      (setq iedit-auto-buffering old-iedit-auto-buffering))))
+      (setq iedit-auto-buffering old-iedit-auto-buffering)
+      (setq iedit-case-sensitive old-iedit-case-sensitive))))
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
