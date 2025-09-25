@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-25 09:29:00 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-25 10:36:12 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -74,7 +74,8 @@ Iedit-rect default key binding is <C-x> <r> <;>
 (defun with-iedit-test-fixture (input-buffer-string body)
   "iedit test fixture"
   (let ((old-transient-mark-mode transient-mark-mode)
-        (old-iedit-transient-sensitive iedit-transient-mark-sensitive))
+        (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
+        (old-iedit-case-sensitive iedit-case-sensitive))
     (unwind-protect
         (progn
           (with-iedit-test-buffer "* iedit transient mark *"
@@ -94,7 +95,8 @@ Iedit-rect default key binding is <C-x> <r> <;>
             (iedit-mode)
             (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
-      (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive))))
+      (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive
+            iedit-case-sensitive old-iedit-case-sensitive))))
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
