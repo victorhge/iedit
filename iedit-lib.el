@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-10-13 19:11:15 Victor Ren>
+;; Time-stamp: <2025-10-13 19:12:15 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous rectangle refactoring
 ;; Version: 0.9.9.9.9
@@ -77,12 +77,12 @@ The regions are usually the same, called 'occurrence' in the mode."
   :group 'iedit)
 
 (defcustom iedit-case-sensitive-default t
-  "If no-nil, matching is case sensitive."
+  "If non-nil, iedit matching is case sensitive."
   :type 'boolean
   :group 'iedit)
 
 (defcustom iedit-transient-mark-sensitive t
-  "If no-nil, Iedit mode is sensitive to the Transient Mark mode.
+  "If non-nil, Iedit mode is sensitive to the Transient Mark mode.
 It means Iedit works as expected only when regions are
 highlighted.  If you want to use iedit without Transient Mark
 mode, set it as nil."
@@ -90,7 +90,7 @@ mode, set it as nil."
   :group 'iedit)
 
 (defcustom iedit-auto-buffering nil
-  "If no-nil, iedit-mode automatically starts buffering the changes.
+  "If non-nil, iedit-mode automatically starts buffering the changes.
  This could be a workaround for lag problem under certain modes."
   :type 'boolean
   :group 'iedit)
@@ -126,9 +126,8 @@ occurrence overlay is used to provide a different face
 configurable via `iedit-ready-only-occurrence'.")
 
 (defvar-local iedit-case-sensitive iedit-case-sensitive-default
-  "This is buffer local variable.
-If no-nil, matching is case sensitive.  If nil and `case-replace'
-is no-nil, iedit try to preserve the case pattern of each
+  "If non-nil, matching is case sensitive.  If nil and `case-replace'
+is non-nil, iedit try to preserve the case pattern of each
 occurrence.")
 
 (defvar iedit-search-invisible search-invisible
@@ -847,14 +846,18 @@ value of `iedit-occurrence-context-lines' is used for this time."
       (iedit-show-all)
     (iedit-hide-occurrence-lines)))
 
-(defun iedit-apply-on-occurrences (function &rest args)
-  "Call function for each occurrence."
+(defun iedit-apply-on-occurrences (function)
+  "Call FUNCTION on each occurrence.
+FUNCTION must accept 2 arguments, BEG and END, the point position of the
+occurrence beginning and end."
   (let ((iedit-updating t))
     (save-excursion
       (dolist (occurrence iedit-occurrences-overlays)
-        (apply function (overlay-start occurrence) (overlay-end occurrence) args)))))
+        (funcall function
+                 (overlay-start occurrence)
+                 (overlay-end occurrence))))))
 
-(defun iedit-apply-on-occurrences-in-seq (function &rest args)
+(defun iedit-apply-on-occurrences-in-seq (function)
   "Call function for each occurrence in sequence."
   (let ((iedit-updating t))
     (save-excursion
@@ -863,7 +866,7 @@ value of `iedit-occurrence-context-lines' is used for this time."
                for ov = (iedit-find-current-occurrence-overlay)
                while (/= (point) (point-max))
                do (progn
-                    (apply function ov counter args)
+                    (funcall function ov counter)
                     (iedit-move-conjoined-overlays ov)
                     ;; goto the beginning of the next occurrence overlay
                     (if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
@@ -902,13 +905,12 @@ FORMAT."
      (list 1 iedit-increment-format-string)))
   (iedit-barf-if-buffering)
   (iedit-apply-on-occurrences-in-seq
-   (lambda (ov count start-at)
+   (lambda (ov count)
      (let ((counter (+ count start-at)))
        (goto-char (overlay-start ov))
        (if (re-search-forward "\\\\#" (overlay-end ov) t)
            (replace-match (format format-string counter) t)
-         (insert (format format-string counter)))))
-   start-at))
+         (insert (format format-string counter)))))))
 
 ;;; Don't downcase from-string to allow case freedom!
 (defun iedit-replace-occurrences(&optional to-string)
@@ -930,7 +932,7 @@ TO-STRING."
                                                (not literal))
                       to-string)))
     (iedit-apply-on-occurrences-in-seq
-     (lambda (ov count to-string literal)
+     (lambda (ov count)
        (goto-char (overlay-start ov))
        (search-forward (buffer-substring-no-properties
                         (overlay-start ov)
@@ -951,7 +953,7 @@ TO-STRING."
          (offset (- (point) (overlay-start ov)))
          (count (- (overlay-end ov) (overlay-start ov))))
     (iedit-apply-on-occurrences
-     (lambda (beg end )
+     (lambda (beg end)
        (delete-region beg end)
        (goto-char beg)
        (insert-and-inherit (make-string count 32))))
