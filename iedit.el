@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2025-09-26 10:34:14 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-27 22:49:06 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9.9
@@ -139,41 +139,36 @@ from iedit mode."
 matches starts and end at word boundaries.")
 
 (defvar-local iedit-occurrence-type-local 'symbol
-  "This is buffer local variable which indicates the occurrence
-type. It might be (symbol word email url markup-tag regexp selection other).")
+  "Symbol which indicates the occurrence type.
+It might any of (symbol word email url markup-tag regexp selection other).")
 
 (defvar iedit-occurrence-type-global 'symbol
-  "This is global variable which indicates the last global occurrence
-type. It might be (symbol word email url markup-tag regexp selection other).")
+  "Symbol the last global occurrence type.
+It might any of (symbol word email url markup-tag regexp selection other).")
 
 (defvar-local iedit-last-occurrence-local nil
-  "This is buffer local variable which is the occurrence when
-Iedit mode is turned off last time.")
+  "The occurrence string when Iedit mode is turned off last time in buffer.")
 
 (defvar iedit-last-occurrence-global nil
-  "This is global variable which is the occurrence when
-Iedit mode is turned off last time.")
+  "The occurrence string when Iedit mode is turned off last time.")
 
 (defvar iedit-last-initial-string-global nil
-  "This is a global variable which is the last initial occurrence string.")
+  "The last initial occurrence string.")
 
 (defvar-local iedit-initial-string-local nil
-  "This is buffer local variable which is the initial string to start Iedit mode.")
+  "The initial string to start Iedit mode in current buffer.")
 
 (defvar-local iedit-initial-region nil
-  "This is buffer local variable which is the initial region
-where Iedit mode is started from.")
+  "The initial region where Iedit mode is started from in current buffer.")
 
 (defvar iedit-num-lines-to-expand-up 0
-  "This is a global variable indicating how many lines up from
-point should be included in the replacement region.")
+  "Number of lines up from point to include in the replacement region.")
 
 (defvar iedit-num-lines-to-expand-down 0
-  "This is a global variable indicating how many lines down from
-point should be included in the replacement region.")
+  "Number of lines down from point to include in the replacement region.")
 
 (defvar-local iedit-default-occurrence-local nil
-  "This is a function which returns a string as occurrence candidate.
+  "The function which returns a string as occurrence candidate.
 It is called in `iedit-default-occurrence'.  This buffer local
 variable can be configured in some modes.  An example of how to
 use this variable:
