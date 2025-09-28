@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020, 2021 Victor Ren
 
-;; Time-stamp: <2025-09-27 22:49:06 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-28 12:13:18 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Keywords: occurrence region simultaneous refactoring
 ;; Version: 0.9.9.9.9
@@ -281,8 +281,7 @@ This is like `describe-bindings', but displays only Iedit keys."
         (define-key global-map key 'iedit-mode)
         (define-key isearch-mode-map key 'iedit-mode-from-isearch)
         (define-key esc-map key 'iedit-execute-last-modification)
-        (define-key help-map key 'iedit-mode-toggle-on-function)
-        (message "Iedit default key binding is %s" (key-description key))))))
+        (define-key help-map key 'iedit-mode-toggle-on-function)))))
 
 (when (and iedit-toggle-key-default (null (where-is-internal 'iedit-mode)))
   (iedit-update-key-bindings iedit-toggle-key-default))

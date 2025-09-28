@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-28 11:35:21 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-28 12:17:54 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -49,10 +49,7 @@
     ;; When loading iedit.el, if `iedit-mode' is not bound, iedit.el binds it
     ;; an issue a message describing the binding.
     ;; Check that the expected message is issued.
-    (should (string= (buffer-string)
-                     "\
-Iedit default key binding is C-;
-Iedit-rect default key binding is <C-x> <r> <;>\n"))
+    (should (string= (buffer-string) ""))
     (should (file-exists-p (byte-compile-dest-file "iedit-lib.el")))
     (should (file-exists-p (byte-compile-dest-file "iedit-rect.el")))
     (should (file-exists-p (byte-compile-dest-file "iedit.el")))
