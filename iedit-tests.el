@@ -2,12 +2,12 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-25 12:08:11 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-27 22:40:35 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
 ;;        https://www.emacswiki.org/emacs/Iedit
-;; Compatibility: GNU Emacs: 22.x, 23.x, 24.x, 25.x
+;; Compatibility: GNU Emacs: 24.x, 25.x
 
 ;; This file is not part of GNU Emacs, but it is distributed under
 ;; the same terms as GNU Emacs.
@@ -36,17 +36,29 @@
 (require 'elp)                 ; use: `elp-function-list'
 (require 'sgml-mode)           ; use: `sgml-electric-tag-pair-mode'
 
+(defvar iedit-test--buffer-file-name buffer-file-truename
+  "Remember current buffer file name.")
+
 (ert-deftest iedit-batch-compile-test ()
+  "First byte compile all files to verify code validity."
   (with-temp-buffer
-    (cd (file-name-directory (locate-library "iedit-tests")))
-    (call-process-shell-command "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
-    (should (string= (buffer-string) "Iedit default key binding is C-;
-Iedit-rect default key binding is <C-x> <r> <;>
-"))
-    (delete-file (byte-compile-dest-file "iedit-lib.el") nil)
-    (delete-file (byte-compile-dest-file "iedit-rect.el") nil)
-    (delete-file (byte-compile-dest-file "iedit-tests.el") nil)
-    (delete-file (byte-compile-dest-file "iedit.el") nil)))
+    (cd (file-name-directory (or (locate-library "iedit-tests")
+                                 (expand-file-name iedit-test--buffer-file-name))))
+    (call-process-shell-command
+     "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
+    ;; When loading iedit.el, if `iedit-mode' is not bound, iedit.el binds it
+    ;; an issue a message describing the binding.
+    ;; Check that the expected message is issued.
+    (should (string= (buffer-string)
+                     "\
+Iedit default key binding is C-;
+Iedit-rect default key binding is <C-x> <r> <;>\n"))
+    (should (file-exists-p (byte-compile-dest-file "iedit-lib.el")))
+    (should (file-exists-p (byte-compile-dest-file "iedit-rect.el")))
+    (should (file-exists-p (byte-compile-dest-file "iedit.el")))
+    (should (file-exists-p (byte-compile-dest-file "iedit-tests.el")))))
+
+;; --
 
 (defmacro with-iedit-test-buffer (buffer-name &rest body)
   (declare (indent 1) (debug t))
@@ -60,63 +72,77 @@ Iedit-rect default key binding is <C-x> <r> <;>
               ,@body))))
 
 (defun marker-position-list (l)
-  "convert list of markers to positions"
+  "Convert list of markers L to positions."
   (mapcar (lambda (m) (marker-position m)) l))
 
 (defun goto-word (word &optional beginning)
-  (goto-char (point-min))
+  "Move point to the end or BEGINNING of the specified WORD."
+  (goto-char 1)
   (search-forward word)
   (when beginning
     (goto-char (- (point) (length word)))))
 
 (defun goto-word-beginning (word)
+  "Move point to the beginning of specified WORD."
   (goto-word word t))
 
 (defun with-iedit-test-fixture (input-buffer-string body)
-  "iedit test fixture"
+  "Setup iedit test environment, using INPUT-BUFFER-STRING to run BODY."
   (let ((old-transient-mark-mode transient-mark-mode)
         (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
         (old-iedit-case-sensitive iedit-case-sensitive))
-    (unwind-protect
-        (progn
-          (with-iedit-test-buffer "* iedit transient mark *"
-            (transient-mark-mode t)
-            (setq iedit-transient-mark-sensitive t
-                  iedit-case-sensitive t)
-            (insert input-buffer-string)
-            (goto-char 1)
-            (iedit-mode)
-            (funcall body))
-          (with-iedit-test-buffer "* iedit NO transient mark *"
-            (setq iedit-transient-mark-sensitive nil
-                  iedit-case-sensitive t)
-            (transient-mark-mode -1)
-            (insert input-buffer-string)
-            (goto-char 1)
-            (iedit-mode)
-            (funcall body)))
-      (transient-mark-mode old-transient-mark-mode)
-      (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive
-            iedit-case-sensitive old-iedit-case-sensitive))))
+    (save-excursion
+      (unwind-protect
+          (progn
+            (with-iedit-test-buffer "* iedit transient mark *"
+              (transient-mark-mode t)
+              (setq iedit-transient-mark-sensitive t
+                    iedit-case-sensitive t)
+              (insert input-buffer-string)
+              (goto-char 1)
+              (iedit-mode)
+              (funcall body))
+            (with-iedit-test-buffer "* iedit NO transient mark *"
+              (setq iedit-transient-mark-sensitive nil
+                    iedit-case-sensitive t)
+              (transient-mark-mode -1)
+              (insert input-buffer-string)
+              (goto-char 1)
+              (iedit-mode)
+              (funcall body)))
+        (transient-mark-mode old-transient-mark-mode)
+        (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive
+              iedit-case-sensitive old-iedit-case-sensitive)))))
 
 (ert-deftest iedit-mode-base-test ()
+  "Test base iedit selection."
   (with-iedit-test-fixture
    "foo
   foo
    barfoo
    foo"
    (lambda ()
+     ;; after selecting iedit-mode on the first word, "foo", there
+     ;; should be 3 instances selected.
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
+     ;; We can limit the number of occurrences my only marking the
+     ;; first 2 lines and executing `iedit-mode' again.  Now only
+     ;; the first 2 occurrences (inside the marked area) should be
+     ;; selected.
      (set-mark-command nil)
      (forward-line 2)
      (iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
+     ;; Issuing the command on blank area should stop the selections.
+     ;; It also clears `iedit-initial-string-local'.
      (iedit-mode)
-     (should (null iedit-occurrences-overlays)))))
+     (should (null iedit-occurrences-overlays))
+     (should (null iedit-initial-string-local)))))
 
 (ert-deftest iedit-mode-with-region-test ()
+  "Test iedit when are is marked."
   (with-iedit-test-fixture
    "foobar
  foo
@@ -124,6 +150,10 @@ Iedit-rect default key binding is <C-x> <r> <;>
  bar
 foo"
    (lambda ()
+     ;; Turn `iedit-mode' off (the test-fixture turned it on).
+     ;; Select the first 3 characters of "foobar" then turn `iedit-mode' on.
+     ;; There should be 4 matches as matching is done on the selected string,
+     ;; not words, symbols or other types of matches.
      (iedit-mode)
      (goto-char 1)
      (set-mark-command nil)
@@ -132,6 +162,8 @@ foo"
      (should (= 4 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
      (should (eq 'selection iedit-occurrence-type-local))
+     ;; Mark the region of first 3 lines, with iedit-mode 4
+     ;; select only what is outside the region.
      (goto-char 1)
      (set-mark-command nil)
      (forward-line 3)
@@ -201,7 +233,7 @@ foo"
 foo"
    (lambda ()
      (iedit-mode)
-     (goto-char (point-min))
+     (goto-char 1)
      (goto-char (line-end-position))
      (iedit-mode)
      (delete-region (point) (1- (point)))
@@ -262,8 +294,11 @@ foo
      (isearch-process-search-char ?b)
      (call-interactively 'iedit-mode-from-isearch)
      (should (null iedit-occurrences-overlays))
-     (should (null iedit-mode)) ;; (should (string= (current-message) "Matches are not the same length."))
-     (goto-char (point-min))
+     (should (null iedit-mode))
+     ;; [:todo 2025-09-27, by Pierre Rouleau: check why this passes inside
+     ;; Emacs, fails at 'make test'.]
+     ;; (should (string= (current-message) "Matches are not the same length."))
+     (goto-char 1)
      (call-interactively 'isearch-forward-regexp)
      (isearch-process-search-char ?f)
      (isearch-process-search-char ?o)
@@ -340,10 +375,12 @@ foo
      (should (= (point) 24))
      (should (= iedit-occurrence-index 3))
      (iedit-next-occurrence 1)
-     (should (= (point) 24)) ;; (should (string= (current-message) "This is the last occurrence."))
+     (should (= (point) 24))
+     ;; (should (string= (current-message) "This is the last occurrence."))
      (should (= iedit-occurrence-index 3))
      (iedit-next-occurrence 1)
-     (should (= (point) 1)) ;; (should (string= (current-message) "Located the first occurrence."))
+     (should (= (point) 1))
+     ;; (should (string= (current-message) "Located the first occurrence."))
      (should (= iedit-occurrence-index 1))
      (iedit-next-occurrence 1)
      (should (= (point) 7))
@@ -357,12 +394,15 @@ foo
      (iedit-prev-occurrence 1)
      (should (= (point) 1))
      (iedit-prev-occurrence 1)
-     (should (= (point) 1)) ;; (should (string= (current-message) "This is the first occurrence."))
+     (should (= (point) 1))
+     ;; (should (string= (current-message) "This is the first occurrence."))
      (iedit-prev-occurrence 1)
-     (should (= (point) 24)) ;; (should (string= (current-message) "Located the last occurrence."))
+     (should (= (point) 24))
+     ;; (should (string= (current-message) "Located the last occurrence."))
      )))
 
 (ert-deftest iedit-occurrence-update-test ()
+  "Test change done on matches."
   (with-iedit-test-fixture
    "foo
   foo
@@ -376,7 +416,7 @@ foo
   1foo
    barfoo
    1foo"))
-     (delete-char 1)
+     (delete-char -1)
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
                       "foo
@@ -485,21 +525,26 @@ foo
    barFoo
    FOO"
    (lambda ()
-     (iedit-mode)
-     (goto-char 1)
-     (set-mark-command nil)
-     (forward-char 3)
-     (let ((iedit-case-sensitive nil)
-	   (case-replace t))
-       (iedit-mode)
-       (goto-char 1)
-       (insert "bar")
-       (run-hooks 'post-command-hook)
-       (should (string= (buffer-string)
-                        "barfoo
+     (let ((old-iedit-case-sensitive iedit-case-sensitive)
+           (old-case-replace case-replace))
+       (unwind-protect
+           (progn
+             (setq iedit-case-sensitive nil
+                   case-replace t)
+             (goto-char 1)
+             (set-mark-command nil)
+             (forward-char 3)
+             (iedit-mode)
+             (goto-char 1)
+             (insert "bar")
+             (run-hooks 'post-command-hook)
+             (should (string= (buffer-string)
+                              "barfoo
   BarFoo
    barBarFoo
-   BARFOO"))))))
+   BARFOO")))
+         (setq iedit-case-sensitive old-iedit-case-sensitive
+               case-replace old-case-replace))))))
 
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"
@@ -565,6 +610,7 @@ foo
      (iedit-delete-occurrences)
      (should (string= (buffer-string) "  barfoo ")))))
 
+
 (ert-deftest iedit-toggle-buffering-test ()
   (with-iedit-test-fixture
    "foo
@@ -572,36 +618,40 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-toggle-buffering)
-     (insert "bar")
-     (run-hooks 'post-command-hook)
-     (should (string= (buffer-string)
-                      "barfoo
+     (let ((old-iedit-auto-buffering iedit-auto-buffering))
+       (unwind-protect
+           (progn
+             (iedit-toggle-buffering)
+             (insert "bar")
+             (run-hooks 'post-command-hook)
+             (should (string= (buffer-string)
+                              "barfoo
  foo
   barfoo
     foo"))
-     (iedit-toggle-buffering)
-     (should (string= (buffer-string)
-                      "barfoo
+             (iedit-toggle-buffering)
+             (should (string= (buffer-string)
+                              "barfoo
  barfoo
   barfoo
     barfoo"))
-     (should (= (point) 4))
-     (iedit-toggle-buffering)
-     (delete-char 3)
-     (should (string= (buffer-string)
-                      "foo
+             (should (= (point) 4))
+             (iedit-toggle-buffering)
+             (delete-char -3)
+             (should (string= (buffer-string)
+                              "foo
  barfoo
   barfoo
     barfoo"))
-     (goto-char 15) ;not in an occurrence
-     (should (null (iedit-find-current-occurrence-overlay)))
-     (iedit-toggle-buffering)
-     (should (string= (buffer-string)
-                      "foo
+             (goto-char 15)             ;not in an occurrence
+             (should (null (iedit-find-current-occurrence-overlay)))
+             (iedit-toggle-buffering)
+             (should (string= (buffer-string)
+                              "foo
  foo
   barfoo
-    foo")))))
+    foo")))
+         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
 
 (ert-deftest iedit-buffering-undo-test ()
   (with-iedit-test-fixture
@@ -610,33 +660,36 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)						;turnoff
-     (setq iedit-auto-buffering t)
-     (push nil buffer-undo-list)
-     (call-interactively 'iedit-mode)
-     (insert "bar")
-     (run-hooks 'post-command-hook)
-     (should (string= (buffer-string)
-                      "barfoo
+     (let ((old-iedit-auto-buffering iedit-auto-buffering))
+       (unwind-protect
+           (progn
+             (iedit-mode)               ;turnoff
+             (setq iedit-auto-buffering t)
+             (push nil buffer-undo-list)
+             (call-interactively 'iedit-mode)
+             (insert "bar")
+             (run-hooks 'post-command-hook)
+             (should (string= (buffer-string)
+                                  "barfoo
  foo
   barfoo
     foo"))
-     (call-interactively 'iedit-mode)
-     (should (string= (buffer-string)
-                      "barfoo
+             (call-interactively 'iedit-mode)
+             (should (string= (buffer-string)
+                                  "barfoo
  barfoo
   barfoo
     barfoo"))
-     (should (= (point) 4))
-     (push nil buffer-undo-list)
-     (undo 1)
-     (should (= (point) 1))
-     (should (string= (buffer-string)
-                      "foo
+             (should (= (point) 4))
+             (push nil buffer-undo-list)
+             (undo 1)
+             (should (= (point) 1))
+             (should (string= (buffer-string)
+                              "foo
  foo
   barfoo
-    foo"))
-     )))
+    foo")))
+         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
 
 (ert-deftest iedit-buffering-quit-test ()
   (with-iedit-test-fixture
@@ -645,33 +698,36 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)						;turnoff
-     (setq iedit-auto-buffering t)
-     (push nil buffer-undo-list)
-     (call-interactively 'iedit-mode)
-     (insert "bar")
-     (run-hooks 'post-command-hook)
-     (should (string= (buffer-string)
-                      "barfoo
+     (let ((old-iedit-auto-buffering iedit-auto-buffering))
+       (unwind-protect
+           (progn
+             (iedit-mode)               ;turnoff
+             (setq iedit-auto-buffering t)
+             (push nil buffer-undo-list)
+             (call-interactively 'iedit-mode)
+             (insert "bar")
+             (run-hooks 'post-command-hook)
+             (should (string= (buffer-string)
+                              "barfoo
  foo
   barfoo
     foo"))
-     (call-interactively 'iedit--quit)
-     (should (string= (buffer-string)
-                      "barfoo
+             (call-interactively 'iedit--quit)
+             (should (string= (buffer-string)
+                              "barfoo
  foo
   barfoo
     foo"))
-     (should (= (point) 4))
-     (push nil buffer-undo-list)
-     (undo 1)
-     (should (= (point) 1))
-     (should (string= (buffer-string)
-                      "foo
+             (should (= (point) 4))
+             (push nil buffer-undo-list)
+             (undo 1)
+             (should (= (point) 1))
+             (should (string= (buffer-string)
+                              "foo
  foo
   barfoo
-    foo"))
-     )))
+    foo")))
+         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
 
 (ert-deftest iedit-rectangle-start-test ()
   (with-iedit-test-fixture
@@ -687,7 +743,7 @@ foo
      (call-interactively 'iedit-rectangle-mode)
      (should (equal (marker-position-list iedit-rectangle) '(1 19)))
      (call-interactively 'iedit-rectangle-mode)
-     (goto-char (point-min))
+     (goto-char 1)
      (set-mark-command nil)
      (goto-char (point-max))
      (call-interactively 'iedit-rectangle-mode)
@@ -903,21 +959,21 @@ foo"
      (should (equal (iedit-hide-occurrence-lines) '((74 77) (55 63) (39 46) (25 32) (11 20) (1 8)))))))
 
 ;; todo add a auto performance test
-(setq elp-function-list '(;; insert-and-inherit
-                          ;; delete-region
-                          ;; goto-char
-                          ;; iedit-occurrence-update
-                          ;; buffer-substring-no-properties
-                          ;; string=
-                          re-search-forward
-                          ;; replace-match
-                          text-property-not-all
-                          iedit-make-occurrence-overlay
-                          iedit-make-occurrences-overlays
-                          match-beginning
-                          match-end
-                          push
-                          ))
+;; (setq elp-function-list '(;; insert-and-inherit
+;;                           ;; delete-region
+;;                           ;; goto-char
+;;                           ;; iedit-occurrence-update
+;;                           ;; buffer-substring-no-properties
+;;                           ;; string=
+;;                           re-search-forward
+;;                           ;; replace-match
+;;                           text-property-not-all
+;;                           iedit-make-occurrence-overlay
+;;                           iedit-make-occurrences-overlays
+;;                           match-beginning
+;;                           match-end
+;;                           push
+;;                           ))
 
 
 ;;; iedit-tests.el ends here
