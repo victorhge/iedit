@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-09-29 19:47:28 Victor Ren>
+;; Time-stamp: <2025-09-29 19:45:30 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -41,9 +41,7 @@
   (with-temp-buffer
 	(cd (file-name-directory (locate-library "iedit-tests")))
 	(call-process-shell-command "emacs -L . -Q --batch -f batch-byte-compile *.el" nil (current-buffer))
-    (should (string= (buffer-string) "Iedit default key binding is C-;
-Iedit-rect default key binding is <C-x> <r> <;>
-"))
+    (should (string= (buffer-string) ""))
 	(delete-file (byte-compile-dest-file "iedit-lib.el") nil)
 	(delete-file (byte-compile-dest-file "iedit-rect.el") nil)
 	(delete-file (byte-compile-dest-file "iedit-tests.el") nil)
@@ -99,8 +97,9 @@ Iedit-rect default key binding is <C-x> <r> <;>
             (iedit-mode)
             (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
-      (setq iedit-transient-mark-sensitive old-transient-mark-mode)
-	  (setq iedit-auto-buffering old-iedit-auto-buffering))))
+      (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive)
+      (setq iedit-auto-buffering old-iedit-auto-buffering)
+      (setq iedit-case-sensitive old-iedit-case-sensitive))))
 
 (ert-deftest iedit-mode-base-test ()
   (with-iedit-test-fixture
