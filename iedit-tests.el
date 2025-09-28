@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2019, 2020 Victor Ren
 
-;; Time-stamp: <2025-09-27 22:40:35 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-28 11:35:21 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -90,6 +90,7 @@ Iedit-rect default key binding is <C-x> <r> <;>\n"))
   "Setup iedit test environment, using INPUT-BUFFER-STRING to run BODY."
   (let ((old-transient-mark-mode transient-mark-mode)
         (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
+        (old-iedit-auto-buffering iedit-auto-buffering)
         (old-iedit-case-sensitive iedit-case-sensitive))
     (save-excursion
       (unwind-protect
@@ -97,6 +98,7 @@ Iedit-rect default key binding is <C-x> <r> <;>\n"))
             (with-iedit-test-buffer "* iedit transient mark *"
               (transient-mark-mode t)
               (setq iedit-transient-mark-sensitive t
+                    iedit-auto-buffering nil
                     iedit-case-sensitive t)
               (insert input-buffer-string)
               (goto-char 1)
@@ -104,6 +106,7 @@ Iedit-rect default key binding is <C-x> <r> <;>\n"))
               (funcall body))
             (with-iedit-test-buffer "* iedit NO transient mark *"
               (setq iedit-transient-mark-sensitive nil
+                    iedit-auto-buffering nil
                     iedit-case-sensitive t)
               (transient-mark-mode -1)
               (insert input-buffer-string)
@@ -112,6 +115,7 @@ Iedit-rect default key binding is <C-x> <r> <;>\n"))
               (funcall body)))
         (transient-mark-mode old-transient-mark-mode)
         (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive
+              iedit-auto-buffering old-iedit-auto-buffering
               iedit-case-sensitive old-iedit-case-sensitive)))))
 
 (ert-deftest iedit-mode-base-test ()
@@ -525,26 +529,20 @@ foo
    barFoo
    FOO"
    (lambda ()
-     (let ((old-iedit-case-sensitive iedit-case-sensitive)
-           (old-case-replace case-replace))
-       (unwind-protect
-           (progn
-             (setq iedit-case-sensitive nil
+     (setq iedit-case-sensitive nil
                    case-replace t)
-             (goto-char 1)
-             (set-mark-command nil)
-             (forward-char 3)
-             (iedit-mode)
-             (goto-char 1)
-             (insert "bar")
-             (run-hooks 'post-command-hook)
-             (should (string= (buffer-string)
+     (goto-char 1)
+     (set-mark-command nil)
+     (forward-char 3)
+     (iedit-mode)
+     (goto-char 1)
+     (insert "bar")
+     (run-hooks 'post-command-hook)
+     (should (string= (buffer-string)
                               "barfoo
   BarFoo
    barBarFoo
-   BARFOO")))
-         (setq iedit-case-sensitive old-iedit-case-sensitive
-               case-replace old-case-replace))))))
+   BARFOO")))))
 
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"
@@ -618,40 +616,36 @@ foo
   barfoo
     foo"
    (lambda ()
-     (let ((old-iedit-auto-buffering iedit-auto-buffering))
-       (unwind-protect
-           (progn
-             (iedit-toggle-buffering)
-             (insert "bar")
-             (run-hooks 'post-command-hook)
-             (should (string= (buffer-string)
-                              "barfoo
+     (iedit-toggle-buffering)
+       (insert "bar")
+       (run-hooks 'post-command-hook)
+       (should (string= (buffer-string)
+                        "barfoo
  foo
   barfoo
     foo"))
-             (iedit-toggle-buffering)
-             (should (string= (buffer-string)
-                              "barfoo
+       (iedit-toggle-buffering)
+       (should (string= (buffer-string)
+                        "barfoo
  barfoo
   barfoo
     barfoo"))
-             (should (= (point) 4))
-             (iedit-toggle-buffering)
-             (delete-char -3)
-             (should (string= (buffer-string)
-                              "foo
+       (should (= (point) 4))
+       (iedit-toggle-buffering)
+       (delete-char -3)
+       (should (string= (buffer-string)
+                        "foo
  barfoo
   barfoo
     barfoo"))
-             (goto-char 15)             ;not in an occurrence
-             (should (null (iedit-find-current-occurrence-overlay)))
-             (iedit-toggle-buffering)
-             (should (string= (buffer-string)
-                              "foo
+       (goto-char 15)             ;not in an occurrence
+       (should (null (iedit-find-current-occurrence-overlay)))
+       (iedit-toggle-buffering)
+       (should (string= (buffer-string)
+                        "foo
  foo
   barfoo
-    foo")))
-         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
+    foo")))))
 
 (ert-deftest iedit-buffering-undo-test ()
   (with-iedit-test-fixture
@@ -660,36 +654,32 @@ foo
   barfoo
     foo"
    (lambda ()
-     (let ((old-iedit-auto-buffering iedit-auto-buffering))
-       (unwind-protect
-           (progn
-             (iedit-mode)               ;turnoff
-             (setq iedit-auto-buffering t)
-             (push nil buffer-undo-list)
-             (call-interactively 'iedit-mode)
-             (insert "bar")
-             (run-hooks 'post-command-hook)
-             (should (string= (buffer-string)
-                                  "barfoo
+     (iedit-mode)               ;turnoff
+       (setq iedit-auto-buffering t)
+       (push nil buffer-undo-list)
+       (call-interactively 'iedit-mode)
+       (insert "bar")
+       (run-hooks 'post-command-hook)
+       (should (string= (buffer-string)
+                        "barfoo
  foo
   barfoo
     foo"))
-             (call-interactively 'iedit-mode)
-             (should (string= (buffer-string)
-                                  "barfoo
+       (call-interactively 'iedit-mode)
+       (should (string= (buffer-string)
+                        "barfoo
  barfoo
   barfoo
     barfoo"))
-             (should (= (point) 4))
-             (push nil buffer-undo-list)
-             (undo 1)
-             (should (= (point) 1))
-             (should (string= (buffer-string)
-                              "foo
+       (should (= (point) 4))
+       (push nil buffer-undo-list)
+       (undo 1)
+       (should (= (point) 1))
+       (should (string= (buffer-string)
+                        "foo
  foo
   barfoo
-    foo")))
-         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
+    foo")))))
 
 (ert-deftest iedit-buffering-quit-test ()
   (with-iedit-test-fixture
@@ -698,36 +688,32 @@ foo
   barfoo
     foo"
    (lambda ()
-     (let ((old-iedit-auto-buffering iedit-auto-buffering))
-       (unwind-protect
-           (progn
-             (iedit-mode)               ;turnoff
-             (setq iedit-auto-buffering t)
-             (push nil buffer-undo-list)
-             (call-interactively 'iedit-mode)
-             (insert "bar")
-             (run-hooks 'post-command-hook)
-             (should (string= (buffer-string)
-                              "barfoo
+     (iedit-mode)               ;turnoff
+       (setq iedit-auto-buffering t)
+       (push nil buffer-undo-list)
+       (call-interactively 'iedit-mode)
+       (insert "bar")
+       (run-hooks 'post-command-hook)
+       (should (string= (buffer-string)
+                        "barfoo
  foo
   barfoo
     foo"))
-             (call-interactively 'iedit--quit)
-             (should (string= (buffer-string)
-                              "barfoo
+       (call-interactively 'iedit--quit)
+       (should (string= (buffer-string)
+                        "barfoo
  foo
   barfoo
     foo"))
-             (should (= (point) 4))
-             (push nil buffer-undo-list)
-             (undo 1)
-             (should (= (point) 1))
-             (should (string= (buffer-string)
-                              "foo
+       (should (= (point) 4))
+       (push nil buffer-undo-list)
+       (undo 1)
+       (should (= (point) 1))
+       (should (string= (buffer-string)
+                        "foo
  foo
   barfoo
-    foo")))
-         (setq iedit-auto-buffering old-iedit-auto-buffering))))))
+    foo")))))
 
 (ert-deftest iedit-rectangle-start-test ()
   (with-iedit-test-fixture
