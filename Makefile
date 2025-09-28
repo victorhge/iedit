@@ -3,7 +3,7 @@
 # Purpose   : Controls iedit compilation and tests in a clean environment.
 # Created   : Tue Nov 24 07:51:14 2020 +0100
 # Author    : Pierre Rouleau <prouleau001@gmail.com>
-# Time-stamp: <2025-09-25 11:43:10 EDT, updated by Pierre Rouleau>
+# Time-stamp: <2025-09-27 19:37:51 EDT, updated by Pierre Rouleau>
 # ----------------------------------------------------------------------------
 # Dependencies
 # ------------
@@ -33,7 +33,7 @@ EL			:= $(sort $(wildcard iedit*.el))
 ELC			:= $(EL:.el=.elc)
 
 
-.PHONY: clean autoloads batch-compile install uninstall
+.PHONY: clean autoloads batch-compile install uninstall test
 
 all: clean autoloads batch-compile
 
@@ -57,9 +57,9 @@ clean:
 # Use a zero-byte file to remember the tests succeeded.
 # Delete that tag file to run successful tests again
 test:	iedit-ran-tests.tag
-	@echo "To run tests again, remove the file iedit-ran-tests.tag"
+	@echo "To run tests again, update test file or remove the file iedit-ran-tests.tag"
 
-iedit-ran-tests.tag:
+iedit-ran-tests.tag: iedit-tests.elc
 	@printf "***** Running Integration tests\n"
 	$(EMACS_COMMAND) --batch -L . -l ert -l iedit-tests.el -f ert-run-tests-batch-and-exit
 	touch iedit-ran-tests.tag
