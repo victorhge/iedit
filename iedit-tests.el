@@ -1,8 +1,8 @@
 ;;; iedit-tests.el --- iedit's automatic-tests -*-lexical-binding: t-*-
 
-;; Copyright (C) 2010 - 2019, 2020 Victor Ren
+;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-09-28 12:17:54 EDT, updated by Pierre Rouleau>
+;; Time-stamp: <2025-09-28 14:31:59 EDT, updated by Pierre Rouleau>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -544,35 +544,51 @@ foo
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
    (lambda ()
      (iedit-upcase-occurrences)
      (should (string= (buffer-string)
-                      "FOO
+                      "\
+FOO
   FOO
    barfoo
    FOO"))
      (iedit-downcase-occurrences)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
   foo
    barfoo
    foo"))
      (iedit-replace-occurrences "bar")
      (should (string= (buffer-string)
-                      "bar
+                      "\
+bar
   bar
    barfoo
    bar"))
+     (let ((current-prefix-arg 4))
+       (iedit-replace-occurrences
+        (query-replace-compile-replacement
+         "\\,(format \"%s %d\" \\& \\#)" t )))
+     (should (string= (buffer-string)
+                      "\
+bar 0
+  bar 1
+   barfoo
+   bar 2"))
      (iedit-number-occurrences 1 "%d ")
      (should (string= (buffer-string)
-                      "1 bar
-  2 bar
+                      "\
+1 bar 0
+  2 bar 1
    barfoo
-   3 bar")))))
+   3 bar 2"))
+     )))
 
 (ert-deftest iedit-blank-occurrences-test ()
   "Test functions deal with the whole occurrences"
