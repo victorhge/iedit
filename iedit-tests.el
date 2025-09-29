@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-10-13 19:10:12 Victor Ren>
+;; Time-stamp: <2025-10-13 19:13:17 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
@@ -118,7 +118,8 @@
 (ert-deftest iedit-mode-base-test ()
   "Test base iedit selection."
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -145,7 +146,8 @@
 (ert-deftest iedit-mode-with-region-test ()
   "Test iedit when are is marked."
   (with-iedit-test-fixture
-   "foobar
+   "\
+foobar
  foo
  foo
  bar
@@ -173,7 +175,8 @@ foo"
 
 (ert-deftest iedit-mode-with-tag-pair-test ()
   (with-iedit-test-fixture
-   "<div> foo </div>
+   "\
+<div> foo </div>
 <div> bar </div>
 <div> foobar </div>
 div
@@ -198,7 +201,8 @@ foo"
 
 (ert-deftest iedit-move-conjointed-overlays-test ()
   (with-iedit-test-fixture
-   "foobar
+   "\
+foobar
  foofoofoo
  foofoo
  foo"
@@ -215,7 +219,8 @@ foo"
      (insert "123")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "123foobar
+                      "\
+123foobar
  123foo123foo123foo
  123foo123foo
  123foo"))
@@ -223,14 +228,16 @@ foo"
      (insert "456")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "123foo456bar
+                      "\
+123foo456bar
  123foo456123foo456123foo456
  123foo456123foo456
  123foo456")))))
 
 (ert-deftest iedit-overlay-at-end-of-buffer ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
 foo"
    (lambda ()
      (iedit-mode)
@@ -240,17 +247,20 @@ foo"
      (delete-region (point) (1- (point)))
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "fo
+                      "\
+fo
 fo"))
      (insert "b")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "fob
+                      "\
+fob
 fob")))))
 
 (ert-deftest iedit-mode-start-from-isearch-test ()
   (with-iedit-test-fixture
-   "a
+   "\
+a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
@@ -280,7 +290,8 @@ foo
 
 (ert-deftest iedit-mode-start-from-isearch-regexp-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   fobar
   foobar
   fooobar
@@ -311,7 +322,8 @@ foo
 
 (ert-deftest iedit-mode-last-local-occurrence-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -326,7 +338,8 @@ foo
 
 (ert-deftest iedit-mode-last-global-occurrence-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -344,7 +357,8 @@ foo
 
 (ert-deftest iedit-execute-last-modification-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -358,7 +372,8 @@ foo
 
 (ert-deftest iedit-movement-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo "
@@ -405,7 +420,8 @@ foo
 (ert-deftest iedit-occurrence-update-test ()
   "Test change done on matches."
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -413,21 +429,24 @@ foo
      (insert "1")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "1foo
+                      "\
+1foo
   1foo
    barfoo
    1foo"))
      (delete-char -1)
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
   foo
    barfoo
    foo"))
      (capitalize-word 1)
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "Foo
+                      "\
+Foo
   Foo
    barfoo
    Foo"))
@@ -436,14 +455,16 @@ foo
      (insert "1")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "1
+                      "\
+1
   1
    barfoo
    1")))))
 
 (ert-deftest iedit-occurrence-update-with-read-only-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
@@ -454,7 +475,8 @@ foo
      (goto-char 2)
      (should-error (insert "1"))
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
   foo
    barfoo
    foo"))
@@ -462,7 +484,8 @@ foo
      (insert "1")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
   1foo
    barfoo
    1foo"))
@@ -470,20 +493,23 @@ foo
 
 (ert-deftest iedit-aborting-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
    (lambda ()
      (kill-region (point) (+ 4 (point)))
      (should (string= (buffer-string)
-                      "  foo
+                      "\
+  foo
    barfoo
    foo")))))
 
 (ert-deftest iedit-toggle-case-sensitive-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   Foo
    barfoo
    foo"
@@ -497,7 +523,8 @@ foo
 
 (ert-deftest iedit-toggle-search-invisible-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
 * foo
 ** foo"
    (lambda ()
@@ -521,7 +548,8 @@ foo
 
 (ert-deftest iedit-case-preserve-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   Foo
    barFoo
    FOO"
@@ -537,7 +565,8 @@ foo
        (insert "bar")
        (run-hooks 'post-command-hook)
        (should (string= (buffer-string)
-                        "barfoo
+                        "\
+barfoo
   BarFoo
    barBarFoo
    BARFOO"))))))
@@ -545,26 +574,30 @@ foo
 (ert-deftest iedit-apply-on-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
   foo
    barfoo
    foo"
    (lambda ()
      (iedit-upcase-occurrences)
      (should (string= (buffer-string)
-                      "FOO
+                      "\
+FOO
   FOO
    barfoo
    FOO"))
      (iedit-downcase-occurrences)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
   foo
    barfoo
    foo"))
      (iedit-replace-occurrences "bar")
      (should (string= (buffer-string)
-                      "bar
+                      "\
+bar
   bar
    barfoo
    bar"))
@@ -585,7 +618,8 @@ foo
 (ert-deftest iedit-blank-occurrences-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-   "foo foo barfoo foo"
+   "\
+foo foo barfoo foo"
    (lambda ()
      (iedit-blank-occurrences)
      (should (string= (buffer-string) "        barfoo    ")))))
@@ -593,7 +627,8 @@ foo
 (ert-deftest iedit-blank-occurrences-rectangle-test ()
   "Test functions deal with the whole occurrences"
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo barfoo foo"
    (lambda ()
      (iedit-mode) ; turn off iedit
@@ -616,7 +651,8 @@ foo
 
 (ert-deftest iedit-toggle-buffering-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -625,13 +661,15 @@ foo
      (insert "bar")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  foo
   barfoo
     foo"))
      (iedit-toggle-buffering)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  barfoo
   barfoo
     barfoo"))
@@ -639,7 +677,8 @@ foo
      (iedit-toggle-buffering)
      (delete-char -3)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
  barfoo
   barfoo
     barfoo"))
@@ -647,14 +686,16 @@ foo
      (should (null (iedit-find-current-occurrence-overlay)))
      (iedit-toggle-buffering)
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
  foo
   barfoo
     foo")))))
 
 (ert-deftest iedit-buffering-undo-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -666,13 +707,15 @@ foo
      (insert "bar")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  foo
   barfoo
     foo"))
      (call-interactively 'iedit-mode)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  barfoo
   barfoo
     barfoo"))
@@ -681,14 +724,16 @@ foo
      (undo 1)
      (should (= (point) 1))
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
  foo
   barfoo
     foo")))))
 
 (ert-deftest iedit-buffering-quit-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -700,13 +745,15 @@ foo
      (insert "bar")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  foo
   barfoo
     foo"))
      (call-interactively 'iedit--quit)
      (should (string= (buffer-string)
-                      "barfoo
+                      "\
+barfoo
  foo
   barfoo
     foo"))
@@ -715,7 +762,8 @@ foo
      (undo 1)
      (should (= (point) 1))
      (should (string= (buffer-string)
-                      "foo
+                      "\
+foo
  foo
   barfoo
     foo")))))
@@ -723,7 +771,8 @@ foo
 
 (ert-deftest iedit-rectangle-start-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -743,7 +792,8 @@ foo
 
 (ert-deftest iedit-kill-rectangle-error-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -761,7 +811,8 @@ foo
 
 (ert-deftest iedit-expand-to-occurrence-test ()
   (with-iedit-test-fixture
-   "a a
+   "\
+a a
 a a a
 a a a"
    (lambda()
@@ -785,7 +836,8 @@ a a a"
 
 (ert-deftest iedit-kill-rectangle-test ()
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -808,7 +860,8 @@ arfoo
   "lines within rectangle shorter than rectangle right column
   should have spaces filled in."
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
  foo
   barfoo
     foo"
@@ -823,7 +876,8 @@ arfoo
 
 (ert-deftest iedit-restrict-defun-test ()
   (with-iedit-test-fixture
-   "a
+   "\
+a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
@@ -850,7 +904,8 @@ arfoo
 
 (ert-deftest iedit-transient-sensitive-test ()
   (with-iedit-test-fixture
-   "a
+   "\
+a
 (defun foo (foo bar foo)
 \"foo bar foobar\" nil)
  (defun bar (bar foo bar)
@@ -891,7 +946,8 @@ abcd" "12345678901234567890123456789012345678901234567890...")))
 (ert-deftest iedit-hide-context-lines-test ()
   "Test function iedit-hide-context-lines."
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
 foo
 a
   foo bar
@@ -925,7 +981,8 @@ foo"
 (ert-deftest iedit-hide-occurrence-lines-test ()
   "Test function iedit-hide-occurrence-lines."
   (with-iedit-test-fixture
-   "foo
+   "\
+foo
 foo
 a
   foo bar
