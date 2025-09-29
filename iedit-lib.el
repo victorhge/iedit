@@ -875,6 +875,24 @@ occurrence beginning and end."
 			(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
 		      (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
 
+(defun iedit-apply-on-occurrences-in-seq (function &rest args)
+  "Call function for each occurrence in sequence."
+  (let ((iedit-updating t))
+    (save-excursion
+	  (goto-char (iedit-first-occurrence))
+	  (cl-loop for counter from 0
+			   for ov = (iedit-find-current-occurrence-overlay)
+			   while (/= (point) (point-max))
+			   do (progn
+					(apply function ov counter args)
+					(iedit-move-conjoined-overlays ov)
+					;; goto the beginning of the next occurrence overlay
+					(if (iedit-find-overlay-at-point (overlay-end ov) 'iedit-occurrence-overlay-name)
+						(goto-char (overlay-end ov)) ; conjoined overlay
+					  (when (< (point) (overlay-end ov))
+						(goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name)))
+					  (goto-char (next-single-char-property-change (point) 'iedit-occurrence-overlay-name))))))))
+
 (defun iedit-upcase-occurrences ()
   "Convert occurrences to upper case."
   (interactive "*")
@@ -944,6 +962,7 @@ TO-STRING."
 		      (not (and (not iedit-case-sensitive) case-replace))
 		      literal)))
     (goto-char (+ (overlay-start oc-ov) offset))))
+
 
 (defun iedit-blank-occurrences()
   "Replace occurrences with blank spaces."

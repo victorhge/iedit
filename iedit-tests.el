@@ -30,9 +30,11 @@
 ;; This file is part of iedit.
 
 ;;; Code:
+
 (require 'ert)
 (require 'iedit)
 (require 'iedit-rect)
+
 (require 'elp)                 ; use: `elp-function-list'
 (require 'sgml-mode)           ; use: `sgml-electric-tag-pair-mode'
 
@@ -114,6 +116,7 @@
         (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive
               iedit-auto-buffering old-iedit-auto-buffering
               iedit-case-sensitive old-iedit-case-sensitive)))))
+
 
 (ert-deftest iedit-mode-base-test ()
   "Test base iedit selection."
@@ -618,6 +621,7 @@ bar 0
    barfoo
    3 bar 2"))
      )))
+
 
 (ert-deftest iedit-blank-occurrences-test ()
   "Test functions deal with the whole occurrences"
