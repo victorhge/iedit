@@ -1036,12 +1036,12 @@ before calling the last keyboard macro."
   (let ((iedit-updating t))
     (save-excursion
       (when iedit-buffering-overlay (iedit-move-conjoined-overlays iedit-buffering-overlay))
-      (dolist (another-occurrence iedit-occurrences-overlays)
-        (when (not (eq another-occurrence iedit-buffering-overlay))
-          (goto-char (+ (overlay-start another-occurrence) iedit-start-kmacro-offset))
-          (kmacro-call-macro nil t)
-          (iedit-move-conjoined-overlays another-occurrence)))
-      )
+      (iedit-apply-on-occurrences-in-seq
+       (lambda (ov _count)
+         (when (not (eq ov iedit-buffering-overlay))
+           (save-excursion
+             (goto-char (+ (overlay-start ov) iedit-start-kmacro-offset))
+             (kmacro-call-macro nil t))))))
     (message "Keyboard macro applied to the occurrences.")))
 
 (defun iedit-case-pattern (beg end)
