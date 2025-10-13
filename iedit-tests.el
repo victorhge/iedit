@@ -2,7 +2,6 @@
 
 ;; Copyright (C) 2010 - 2022 Victor Ren
 
-;; Time-stamp: <2025-10-13 19:13:17 Victor Ren>
 ;; Author: Victor Ren <victorhge@gmail.com>
 ;; Version: 0.9.9.9.9
 ;; X-URL: https://github.com/victorhge/iedit
