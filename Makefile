@@ -3,7 +3,6 @@
 # Purpose   : Controls iedit compilation and tests in a clean environment.
 # Created   : Tue Nov 24 07:51:14 2020 +0100
 # Author    : Pierre Rouleau <prouleau001@gmail.com>
-# Time-stamp: <2025-09-27 19:37:51 EDT, updated by Pierre Rouleau>
 # ----------------------------------------------------------------------------
 # Dependencies
 # ------------
