@@ -82,5 +82,14 @@ knows about the package:
 (require 'iedit)
 #+END_SRC
 
+** Contributing
+To maintain code consistency and avoid divergence, the repository uses two
+branches: `main' and `integration'.
+
+- The `main' branch is reserved for public releases.
+
+- The `integration' branch contains the latest development changes.
+
+Please submit your pull requests to the `integration' branch.
 
 #  LocalWords:  Iedit iedit
