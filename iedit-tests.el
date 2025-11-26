@@ -98,7 +98,7 @@
 								  (setq iedit-case-sensitive t)
 								  (insert input-buffer-string)
 								  (goto-char 1)
-								  (iedit-mode)
+								  (call-interactively 'iedit-mode)
 								  (funcall body))
           (with-iedit-test-buffer "* iedit NO transient mark *"
 								  (setq iedit-transient-mark-sensitive nil)
@@ -107,7 +107,7 @@
 								  (transient-mark-mode -1)
 								  (insert input-buffer-string)
 								  (goto-char 1)
-								  (iedit-mode)
+								  (call-interactively 'iedit-mode)
 								  (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
       (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive)
@@ -133,12 +133,12 @@ foo
      ;; selected.
      (set-mark-command nil)
      (forward-line 2)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
      ;; Issuing the command on blank area should stop the selections.
      ;; It also clears `iedit-initial-string-local'.
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (null iedit-occurrences-overlays))
      (should (null iedit-initial-string-local)))))
 
@@ -156,11 +156,11 @@ foo"
      ;; Select the first 3 characters of "foobar" then turn `iedit-mode' on.
      ;; There should be 4 matches as matching is done on the selected string,
      ;; not words, symbols or other types of matches.
-     (iedit-mode)
+     (iedit-done)
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 4 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
      (should (eq 'selection iedit-occurrence-type-local))
@@ -169,7 +169,8 @@ foo"
      (goto-char 1)
      (set-mark-command nil)
      (forward-line 3)
-     (iedit-mode 4)
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode))
      (should (= 1 (length iedit-occurrences-overlays))))))
 
 (ert-deftest iedit-mode-with-tag-pair-test ()
@@ -184,15 +185,15 @@ foobar
  bar
 foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 2)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "div"))
      ;; (should (eq 'tag iedit-occurrence-type-local))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (sgml-electric-tag-pair-mode t)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "<div>"))
      (should (eq 'symbol iedit-occurrence-type-local))
@@ -206,11 +207,11 @@ foobar
  foofoo
  foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 7 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
      (should (eq 'selection iedit-occurrence-type-local))
@@ -239,10 +240,10 @@ foobar
 foo
 foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 1)
      (goto-char (line-end-position))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (delete-region (point) (1- (point)))
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
@@ -267,10 +268,10 @@ a
 foo
  foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (goto-char 5)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (isearch-mode t)
      (isearch-process-search-char ?f)
      (isearch-process-search-char ?o)
@@ -278,7 +279,7 @@ foo
      (iedit-mode-from-isearch 0)
      (should (string= iedit-initial-string-local "foo"))
      (should (= 5 (length iedit-occurrences-overlays)))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (isearch-mode t)
      (isearch-process-search-char ?f)
      (isearch-process-search-char ?o)
@@ -297,7 +298,7 @@ foo
    barfoo
    foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (call-interactively 'isearch-forward-regexp)
      (isearch-process-search-char ?f)
      (isearch-process-search-char ?o)
@@ -329,9 +330,10 @@ foo
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 15)
-     (iedit-mode 4) ; last local
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode)) ; last local
      (should (string= iedit-initial-string-local "foo"))
      (should (= 3 (length iedit-occurrences-overlays))))))
 
@@ -345,12 +347,13 @@ foo
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (with-temp-buffer
        (set-window-buffer nil (current-buffer))
        (insert "bar foo foo")
        (goto-char 1)
-       (iedit-mode 16)
+	   (let ((current-prefix-arg '(16)))
+		 (call-interactively 'iedit-mode))
        (should (string= iedit-initial-string-local "foo"))
        (should (= 2 (length iedit-occurrences-overlays)))))))
 
@@ -364,7 +367,7 @@ foo
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (string= iedit-initial-string-local "foo"))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (with-temp-buffer
        (insert "bar foo foo")
        (should-error (iedit-execute-last-modification))))))
@@ -468,9 +471,9 @@ foo
    barfoo
    foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (put-text-property 1 2 'read-only t)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 2)
      (should-error (insert "1"))
      (should (string= (buffer-string)
@@ -527,13 +530,13 @@ foo
 * foo
 ** foo"
    (lambda ()
-     (iedit-mode) ; turn off iedit-mode
+     (call-interactively 'iedit-mode) ; turn off iedit-mode
      (outline-mode)
      (forward-line 1)
      (call-interactively 'outline-hide-subtree)
      (setq iedit-search-invisible t)
      (goto-char 1)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (= 0 iedit-lib-skip-invisible-count))
      (iedit-toggle-search-invisible)
@@ -553,13 +556,13 @@ foo
    barFoo
    FOO"
    (lambda ()
-     (iedit-mode)   					; turn off iedit
+     (call-interactively 'iedit-mode)   					; turn off iedit
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
      (let ((iedit-case-sensitive nil)
 		   (case-replace t))
-       (iedit-mode)
+       (call-interactively 'iedit-mode)
        (goto-char 1)
        (insert "bar")
        (run-hooks 'post-command-hook)
@@ -630,7 +633,7 @@ foo foo barfoo foo"
 foo
  foo barfoo foo"
    (lambda ()
-     (iedit-mode) ; turn off iedit
+     (call-interactively 'iedit-mode) ; turn off iedit
      (goto-char 2)
      (set-mark-command nil)
      (goto-char 7)
@@ -699,7 +702,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)               ;turnoff
+     (call-interactively 'iedit-mode)               ;turnoff
      (setq iedit-auto-buffering t)
      (push nil buffer-undo-list)
      (call-interactively 'iedit-mode)
@@ -737,7 +740,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)               ;turnoff
+     (call-interactively 'iedit-mode)               ;turnoff
      (setq iedit-auto-buffering t)
      (push nil buffer-undo-list)
      (call-interactively 'iedit-mode)
@@ -776,7 +779,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (forward-char 3)
      (forward-line 3)
@@ -797,7 +800,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (goto-char 22)
      (call-interactively 'iedit-rectangle-mode)
@@ -841,7 +844,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (goto-char 22)
      (call-interactively 'iedit-rectangle-mode)
@@ -865,7 +868,7 @@ foo
   barfoo
     foo"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (setq indent-tabs-mode nil)
      (set-mark-command nil)
      (goto-word "barfoo")
@@ -882,23 +885,23 @@ a
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (goto-char 5)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (setq iedit-auto-narrow t)
      (iedit-restrict-function)
      (should (= 1 (length iedit-occurrences-overlays)))
      (should (equal (buffer-narrowed-p) iedit-is-narrowed))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 13)
      (setq iedit-auto-narrow nil)
      (call-interactively 'iedit-mode-toggle-on-function)
      (should (= 4 (length iedit-occurrences-overlays)))
-     (iedit-mode)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
+     (call-interactively 'iedit-mode)
      (mark-defun)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 4 (length iedit-occurrences-overlays))))))
 
 (ert-deftest iedit-transient-sensitive-test ()
@@ -910,22 +913,23 @@ a
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (setq iedit-transient-mark-sensitive t)
      (transient-mark-mode -1)
      (goto-char 5)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (iedit-restrict-function)
      (should (= 1 (length iedit-occurrences-overlays)))
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (goto-char 13)
-     (iedit-mode 0)
+	 (let ((current-prefix-arg '(0)))
+       (call-interactively 'iedit-mode))
      (should (= 4 (length iedit-occurrences-overlays)))
-     (iedit-mode) ;;turn off iedit mode
-     (iedit-mode)
+     (call-interactively 'iedit-mode) ;;turn off iedit mode
+     (call-interactively 'iedit-mode)
      (mark-defun)
-     (iedit-mode)
+     (call-interactively 'iedit-mode)
      (should (= 0 (length iedit-occurrences-overlays))))))
 
 (defvar iedit-printable-test-lists

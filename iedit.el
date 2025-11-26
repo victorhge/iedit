@@ -376,6 +376,8 @@ Commands:
 \\{iedit-mode-keymap}
 Keymap used within overlays:
 \\{iedit-mode-occurrence-keymap}"
+  (declare (interactive-only
+            "use `call-interactively' if you have to."))
   (interactive "P")
   (if iedit-mode
       (iedit-mode-on-action arg)
@@ -613,7 +615,8 @@ Also restrict it if optional ARG value is 0"
   (interactive)
   (if iedit-mode
       (iedit-done)
-    (iedit-mode 0)))
+    (let ((current-prefix-arg '(0)))
+       (call-interactively 'iedit-mode))))
 
 ;;;###autoload
 (defun iedit-execute-last-modification ()
