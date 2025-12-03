@@ -126,7 +126,7 @@ foo
      ;; after selecting iedit-mode on the first word, "foo", there
      ;; should be 3 instances selected.
      (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local ( cons 'symbol "foo")))
      ;; We can limit the number of occurrences my only marking the
      ;; first 2 lines and executing `iedit-mode' again.  Now only
      ;; the first 2 occurrences (inside the marked area) should be
@@ -135,12 +135,12 @@ foo
      (forward-line 2)
      (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      ;; Issuing the command on blank area should stop the selections.
-     ;; It also clears `iedit-initial-string-local'.
+     ;; It also clears `iedit-initial-occurrence-local'.
      (call-interactively 'iedit-mode)
      (should (null iedit-occurrences-overlays))
-     (should (null iedit-initial-string-local)))))
+     (should (null iedit-initial-occurrence-local)))))
 
 (ert-deftest iedit-mode-with-region-test ()
   "Test iedit when are is marked."
@@ -162,8 +162,7 @@ foo"
      (forward-char 3)
      (call-interactively 'iedit-mode)
      (should (= 4 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
-     (should (eq 'selection iedit-occurrence-type-local))
+     (should (equal iedit-initial-occurrence-local (cons 'selection "foo")))
      ;; Mark the region of first 3 lines, with iedit-mode 4
      ;; select only what is outside the region.
      (goto-char 1)
@@ -189,14 +188,12 @@ foo"
      (goto-char 2)
      (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "div"))
-     ;; (should (eq 'tag iedit-occurrence-type-local))
+     (should (equal iedit-initial-occurrence-local (cons 'markup-tag "div")))
      (call-interactively 'iedit-mode)
      (sgml-electric-tag-pair-mode t)
      (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "<div>"))
-     (should (eq 'symbol iedit-occurrence-type-local))
+     (should (equal iedit-initial-occurrence-local (cons 'symbol "<div>")))
      (sgml-electric-tag-pair-mode))))
 
 (ert-deftest iedit-move-conjointed-overlays-test ()
@@ -213,8 +210,7 @@ foobar
      (forward-char 3)
      (call-interactively 'iedit-mode)
      (should (= 7 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
-     (should (eq 'selection iedit-occurrence-type-local))
+     (should (equal iedit-initial-occurrence-local (cons 'selection "foo")))
      (goto-char 1)
      (insert "123")
      (run-hooks 'post-command-hook)
@@ -277,7 +273,7 @@ foo
      (isearch-process-search-char ?o)
      (isearch-process-search-char ?o)
      (iedit-mode-from-isearch 0)
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local (cons 'regexp "foo")))
      (should (= 5 (length iedit-occurrences-overlays)))
      (call-interactively 'iedit-mode)
      (isearch-mode t)
@@ -329,12 +325,12 @@ foo
    foo"
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
      (goto-char 15)
 	 (let ((current-prefix-arg '(4)))
        (call-interactively 'iedit-mode)) ; last local
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (should (= 3 (length iedit-occurrences-overlays))))))
 
 (ert-deftest iedit-mode-last-global-occurrence-test ()
@@ -346,15 +342,16 @@ foo
    foo"
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
+     (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
+	 (should (equal iedit-last-occurrence-global (cons 'symbol "foo")))
      (with-temp-buffer
        (set-window-buffer nil (current-buffer))
        (insert "bar foo foo")
        (goto-char 1)
 	   (let ((current-prefix-arg '(16)))
 		 (call-interactively 'iedit-mode))
-       (should (string= iedit-initial-string-local "foo"))
+       (should (equal iedit-initial-occurrence-local iedit-last-occurrence-global))
        (should (= 2 (length iedit-occurrences-overlays)))))))
 
 (ert-deftest iedit-execute-last-modification-test ()
@@ -366,7 +363,7 @@ foo
    foo"
    (lambda ()
      (should (= 3 (length iedit-occurrences-overlays)))
-     (should (string= iedit-initial-string-local "foo"))
+	 (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
      (with-temp-buffer
        (insert "bar foo foo")
