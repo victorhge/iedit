@@ -86,7 +86,7 @@
 (defun with-iedit-test-fixture (input-buffer-string body)
   "Setup iedit test environment, using INPUT-BUFFER-STRING to run BODY."
   (let ((old-transient-mark-mode transient-mark-mode)
-        (old-iedit-transient-sensitive iedit-transient-mark-sensitive)
+		(old-iedit-transient-sensitive iedit-transient-mark-sensitive)
         (old-iedit-auto-buffering iedit-auto-buffering)
         (old-iedit-case-sensitive iedit-case-sensitive))
     (unwind-protect
@@ -98,7 +98,6 @@
 								  (setq iedit-case-sensitive t)
 								  (insert input-buffer-string)
 								  (goto-char 1)
-								  (call-interactively 'iedit-mode)
 								  (funcall body))
           (with-iedit-test-buffer "* iedit NO transient mark *"
 								  (setq iedit-transient-mark-sensitive nil)
@@ -107,7 +106,6 @@
 								  (transient-mark-mode -1)
 								  (insert input-buffer-string)
 								  (goto-char 1)
-								  (call-interactively 'iedit-mode)
 								  (funcall body)))
       (transient-mark-mode old-transient-mark-mode)
       (setq iedit-transient-mark-sensitive old-iedit-transient-sensitive)
@@ -123,6 +121,7 @@ foo
    barfoo
    foo"
    (lambda ()
+	 (call-interactively 'iedit-mode)
      ;; after selecting iedit-mode on the first word, "foo", there
      ;; should be 3 instances selected.
      (should (= 3 (length iedit-occurrences-overlays)))
@@ -152,11 +151,9 @@ foobar
  bar
 foo"
    (lambda ()
-     ;; Turn `iedit-mode' off (the test-fixture turned it on).
      ;; Select the first 3 characters of "foobar" then turn `iedit-mode' on.
      ;; There should be 4 matches as matching is done on the selected string,
      ;; not words, symbols or other types of matches.
-     (iedit-done)
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
@@ -184,7 +181,6 @@ foobar
  bar
 foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (goto-char 2)
      (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
@@ -204,7 +200,6 @@ foobar
  foofoo
  foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
@@ -236,7 +231,6 @@ foobar
 foo
 foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (goto-char 1)
      (goto-char (line-end-position))
      (call-interactively 'iedit-mode)
@@ -264,7 +258,6 @@ a
 foo
  foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (goto-char 5)
      (call-interactively 'iedit-mode)
@@ -294,7 +287,6 @@ foo
    barfoo
    foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (call-interactively 'isearch-forward-regexp)
      (isearch-process-search-char ?f)
      (isearch-process-search-char ?o)
@@ -324,6 +316,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
@@ -341,6 +334,7 @@ foo
    barfoo
    foo"
    (lambda ()
+	 (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
      (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
@@ -362,6 +356,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (should (= 3 (length iedit-occurrences-overlays)))
 	 (should (equal iedit-initial-occurrence-local (cons 'symbol "foo")))
      (call-interactively 'iedit-mode)
@@ -377,6 +372,7 @@ foo
    barfoo
    foo "
    (lambda ()
+     (call-interactively 'iedit-mode)
      (iedit-goto-last-occurrence)
      (should (= (point) 24))
      (should (= iedit-occurrence-index 3))
@@ -425,6 +421,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (insert "1")
      (run-hooks 'post-command-hook)
      (should (string= (buffer-string)
@@ -468,7 +465,6 @@ foo
    barfoo
    foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (put-text-property 1 2 'read-only t)
      (call-interactively 'iedit-mode)
      (goto-char 2)
@@ -498,6 +494,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (kill-region (point) (+ 4 (point)))
      (should (string= (buffer-string)
                       "\
@@ -513,6 +510,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (should (= 2 (length iedit-occurrences-overlays)))
      (iedit-toggle-case-sensitive)
      (should (= 3 (length iedit-occurrences-overlays)))
@@ -527,7 +525,6 @@ foo
 * foo
 ** foo"
    (lambda ()
-     (call-interactively 'iedit-mode) ; turn off iedit-mode
      (outline-mode)
      (forward-line 1)
      (call-interactively 'outline-hide-subtree)
@@ -553,7 +550,6 @@ foo
    barFoo
    FOO"
    (lambda ()
-     (call-interactively 'iedit-mode)   					; turn off iedit
      (goto-char 1)
      (set-mark-command nil)
      (forward-char 3)
@@ -579,6 +575,7 @@ foo
    barfoo
    foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (iedit-upcase-occurrences)
      (should (string= (buffer-string)
                       "\
@@ -620,6 +617,7 @@ bar
    "\
 foo foo barfoo foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (iedit-blank-occurrences)
      (should (string= (buffer-string) "        barfoo    ")))))
 
@@ -630,7 +628,6 @@ foo foo barfoo foo"
 foo
  foo barfoo foo"
    (lambda ()
-     (call-interactively 'iedit-mode) ; turn off iedit
      (goto-char 2)
      (set-mark-command nil)
      (goto-char 7)
@@ -644,6 +641,7 @@ foo
   (with-iedit-test-fixture
    "foo foo barfoo foo"
    (lambda ()
+     (call-interactively 'iedit-mode)
      (iedit-delete-occurrences)
      (should (string= (buffer-string) "  barfoo ")))))
 
@@ -656,6 +654,7 @@ foo
   barfoo
     foo"
    (lambda ()
+	 (call-interactively 'iedit-mode)
      (iedit-toggle-buffering)
      (insert "bar")
      (run-hooks 'post-command-hook)
@@ -699,7 +698,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)               ;turnoff
      (setq iedit-auto-buffering t)
      (push nil buffer-undo-list)
      (call-interactively 'iedit-mode)
@@ -737,7 +735,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)               ;turnoff
      (setq iedit-auto-buffering t)
      (push nil buffer-undo-list)
      (call-interactively 'iedit-mode)
@@ -776,7 +773,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (forward-char 3)
      (forward-line 3)
@@ -797,7 +793,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (goto-char 22)
      (call-interactively 'iedit-rectangle-mode)
@@ -815,6 +810,7 @@ a a
 a a a
 a a a"
    (lambda()
+     (call-interactively 'iedit-mode)
      (goto-char 5)
      (iedit-restrict-current-line)
      (call-interactively 'iedit-expand-down-to-occurrence)
@@ -841,7 +837,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (set-mark-command nil)
      (goto-char 22)
      (call-interactively 'iedit-rectangle-mode)
@@ -865,7 +860,6 @@ foo
   barfoo
     foo"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (setq indent-tabs-mode nil)
      (set-mark-command nil)
      (goto-word "barfoo")
@@ -882,7 +876,6 @@ a
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (goto-char 5)
      (call-interactively 'iedit-mode)
@@ -910,7 +903,6 @@ a
  (defun bar (bar foo bar)
   \"bar foo barfoo\" nil)"
    (lambda ()
-     (call-interactively 'iedit-mode)
      (emacs-lisp-mode)
      (setq iedit-transient-mark-sensitive t)
      (transient-mark-mode -1)
@@ -970,6 +962,7 @@ a
 a
 foo"
    (lambda ()
+	 (call-interactively 'iedit-mode)
      (should (equal (iedit-hide-context-lines 0) '((64 73) (47 54) (33 38) (21 24) (9 10))))
      (iedit-show-all)
      (should (equal (iedit-hide-context-lines 1) '((66 71) (49 52) (35 36))))
@@ -1005,6 +998,7 @@ a
 a
 foo"
    (lambda ()
+	 (call-interactively 'iedit-mode)
      (should (equal (iedit-hide-occurrence-lines) '((74 77) (55 63) (39 46) (25 32) (11 20) (1 8)))))))
 
 ;; todo add a auto performance test
