@@ -1001,6 +1001,31 @@ foo"
 	 (call-interactively 'iedit-mode)
      (should (equal (iedit-hide-occurrence-lines) '((74 77) (55 63) (39 46) (25 32) (11 20) (1 8)))))))
 
+(ert-deftest iedit-cycle-occurrence-type-test ()
+  "Test function iedit-hide-occurrence-lines."
+  (with-iedit-test-fixture
+   "\
+foo
+  $foo
+   barfoo
+   FOO"
+   (lambda ()
+	 (call-interactively 'iedit-mode)
+	 (should (equal (cons 'symbol "foo") (iedit-current-occurrence)))
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode))
+	 (should (equal (cons 'word "foo") (iedit-current-occurrence)))
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode))
+	 (should (equal (cons 'regexp "foo") (iedit-current-occurrence)))
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode))
+	 (should (equal (cons 'selection "foo") (iedit-current-occurrence)))
+	 (let ((current-prefix-arg '(4)))
+       (call-interactively 'iedit-mode))
+	 (should (equal (cons 'symbol "foo") (iedit-current-occurrence)))
+     )))
+
 ;; todo add a auto performance test
 ;; (setq elp-function-list '(;; insert-and-inherit
 ;;                           ;; delete-region

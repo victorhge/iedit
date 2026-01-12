@@ -572,7 +572,9 @@ Return the tag if succeeded, nil if failed."
 
 (defun iedit-current-occurrence()
   "Return a cons cell (TYPE . STRING) giving the current occurrence."
-  (cons (car iedit-initial-occurrence-local) (iedit-current-occurrence-string)))
+  (let ((occurrence-str (iedit-current-occurrence-string)))
+    (if occurrence-str  (cons (car iedit-initial-occurrence-local) occurrence-str)
+      nil)))
 
 (defun iedit-done ()
   "Exit Iedit mode.
@@ -604,6 +606,9 @@ Also restrict it if optional ARG value is 0"
         ((and arg
               (= 0 (prefix-numeric-value arg)))
          (iedit-restrict-function nil))
+        ((and arg
+              (= 4 (prefix-numeric-value arg)))
+         (iedit-cycle-occurrence-type))
         (t (iedit-done))))
 
 ;;;###autoload
@@ -816,6 +821,31 @@ If EXCLUSIVE is non-nil return it for outside of specified region."
                      "matching invisible"
                    "matching visible")
                  counter
+                 (iedit-printable occurrence-regexp))
+        (force-mode-line-update)))))
+
+(defun iedit-cycle-occurrence-type()
+  "Cycling occurrence type in (symbol word regexp other)."
+  (interactive)
+  (let ((occurrence (or (iedit-current-occurrence) iedit-initial-occurrence-local)))
+    (when occurrence
+      (setq occurrence
+            (cons
+             (cl-case (car occurrence)
+               (symbol 'word)
+               (word   'regexp)
+               (regexp 'selection)
+               (t  'symbol))
+             (cdr occurrence)))
+      (setq iedit-initial-occurrence-local occurrence)
+      (iedit-cleanup-occurrences-overlays)
+      (let* ((occurrence-regexp (iedit-regexp-quote  occurrence))
+             (begin (car iedit-initial-region))
+             (end (cadr iedit-initial-region))
+             (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+        (message "%d matches for %s \"%s\""
+                 counter
+                 (car occurrence)
                  (iedit-printable occurrence-regexp))
         (force-mode-line-update)))))
 
