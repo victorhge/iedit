@@ -1026,6 +1026,24 @@ foo
 	 (should (equal (cons 'symbol "foo") (iedit-current-occurrence)))
      )))
 
+(ert-deftest iedit-toggle-apply-isearch-filter-test ()
+  (with-iedit-test-fixture
+   "\
+foo
+  Foo
+   barfoo
+   foo"
+   (lambda ()
+	 (let ((filter (lambda (beg _end) (= beg (line-beginning-position)))))
+	   (add-function :after-while (local 'isearch-filter-predicate) filter)
+       (call-interactively 'iedit-mode)
+       (should (= 1 (length iedit-occurrences-overlays)))
+       (iedit-toggle-apply-isearch-filter)
+	   (should (not iedit-apply-isearch-filter))
+       (should (= 2 (length iedit-occurrences-overlays)))
+	   (remove-function (local 'isearch-filter-predicate) filter))))
+  )
+
 ;; todo add a auto performance test
 ;; (setq elp-function-list '(;; insert-and-inherit
 ;;                           ;; delete-region

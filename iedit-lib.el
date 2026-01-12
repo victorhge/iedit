@@ -80,6 +80,12 @@ The regions are usually the same, called 'occurrence' in the mode."
   :type 'boolean
   :group 'iedit)
 
+
+(defcustom iedit-apply-isearch-filter-default t
+  "If non-nil, iedit matching is filtered by `isearch-filter-predicate'."
+  :type 'boolean
+  :group 'iedit)
+
 (defcustom iedit-transient-mark-sensitive t
   "If non-nil, Iedit mode is sensitive to the Transient Mark mode.
 It means Iedit works as expected only when regions are
@@ -128,6 +134,10 @@ configurable via `iedit-ready-only-occurrence'.")
   "If non-nil, matching is case sensitive.  If nil and `case-replace'
 is non-nil, iedit try to preserve the case pattern of each
 occurrence.")
+
+(defvar-local iedit-apply-isearch-filter iedit-apply-isearch-filter-default
+  "If non-nil, matching is filtered by `isearch-filter-predicate'.  If nil,
+iedit skips the filter check.")
 
 (defvar iedit-search-invisible search-invisible
   "search-invisible while matching.
@@ -232,7 +242,7 @@ It replaces `inhibit-modification-hooks' which prevents calling
 (defvar iedit-occurrence-keymap-default
   (let ((map (make-sparse-keymap)))
     ;; `yas-minor-mode' uses tab by default and installs its keymap in
-    ;; `emulation-mode-map-alists', which is used before before
+    ;; `emulation-mode-map-alists', which is used before
     ;; ‘minor-mode-map-alist’.  So TAB is bond to get used even before
     ;; `yas-minor-mode', to prevent overriding.
     (define-key map (kbd "TAB") 'iedit-next-occurrence)
@@ -352,7 +362,7 @@ Return the number of occurrences."
              ((and (not (eq search-invisible t))
                    (isearch-range-invisible beginning ending))
               (setq iedit-lib-skip-invisible-count (1+ iedit-lib-skip-invisible-count)))
-             ((not (funcall isearch-filter-predicate beginning ending))
+             ((and iedit-apply-isearch-filter (not (funcall isearch-filter-predicate beginning ending)))
               (setq iedit-lib-skip-filtered-count (1+ iedit-lib-skip-filtered-count)))
              (t
               (push (iedit-make-occurrence-overlay beginning ending)

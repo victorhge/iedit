@@ -309,6 +309,7 @@ This is like `describe-bindings', but displays only Iedit keys."
     (define-key map [help] iedit-help-map)
     (define-key map [f1] iedit-help-map)
     (define-key map (kbd "M-;") 'iedit-toggle-selection)
+    (define-key map (kbd "M-\"") 'iedit-toggle-apply-isearch-filter)
     map)
   "Keymap used while Iedit mode is enabled.")
 
@@ -798,6 +799,25 @@ If EXCLUSIVE is non-nil return it for outside of specified region."
                  (if iedit-case-sensitive
                      "is case sensitive"
                    "ignores case")
+                 counter
+                 (iedit-printable occurrence-regexp))
+        (force-mode-line-update)))))
+
+(defun iedit-toggle-apply-isearch-filter ()
+  "Toggle `isearch-filter-predicate' matching occurrences."
+  (interactive)
+  (setq iedit-apply-isearch-filter (not iedit-apply-isearch-filter))
+  (let ((occurrence (iedit-current-occurrence)))
+    (when occurrence
+      (iedit-cleanup-occurrences-overlays)
+      (let* ((occurrence-regexp (iedit-regexp-quote  occurrence))
+             (begin (car iedit-initial-region))
+             (end (cadr iedit-initial-region))
+             (counter (iedit-make-occurrences-overlays occurrence-regexp begin end)))
+        (message "iedit %s. %d matches for \"%s\""
+                 (if iedit-apply-isearch-filter
+                     "is filtered by `isearch-filter-predicate'"
+                   "ignores `isearch-filter-predicate'")
                  counter
                  (iedit-printable occurrence-regexp))
         (force-mode-line-update)))))
