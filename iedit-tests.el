@@ -343,7 +343,7 @@ foo
        (set-window-buffer nil (current-buffer))
        (insert "bar foo foo")
        (goto-char 1)
-	   (let ((current-prefix-arg '(16)))
+	   (let ((current-prefix-arg '(4)))
 		 (call-interactively 'iedit-mode))
        (should (equal iedit-initial-occurrence-local iedit-last-occurrence-global))
        (should (= 2 (length iedit-occurrences-overlays)))))))

@@ -135,12 +135,6 @@ The narrowing is temporary."
   "If non-nil, matches have to start and end at symbol boundaries.
 Otherwise, matches starts and end at word boundaries.")
 
-(defvar-local iedit-last-occurrence-local nil
-  "The occurrence when Iedit mode is turned off last time in current buffer.
-It is a cons cell (TYPE . STRING) giving the occurrence type and
-string. `type' might be any of (symbol word email url markup-tag regexp
-selection other)")
-
 (defvar iedit-last-occurrence-global nil
   "The occurrence when Iedit mode is turned off last time.
 It is a cons cell (TYPE . STRING) giving the occurrence type and
@@ -296,7 +290,7 @@ This is like `describe-bindings', but displays only Iedit keys."
     (define-key map (kbd "M-}") 'iedit-expand-down-a-line)
     (define-key map (kbd "M-p") 'iedit-expand-up-to-occurrence)
     (define-key map (kbd "M-n") 'iedit-expand-down-to-occurrence)
-    (define-key map (kbd "M-G") 'iedit-apply-global-modification)
+    (define-key map (kbd "M-G") 'iedit-apply-last-modification)
     (define-key map (kbd "M-C") 'iedit-toggle-case-sensitive)
     (define-key map (kbd "M-S") 'iedit-toggle-search-invisible)
     map)
@@ -344,16 +338,9 @@ You can also switch to Iedit mode from isearch mode directly.  The
 current search string is used as occurrence.  All occurrences of
 the current search string are highlighted.
 
-With an universal prefix argument ARG, the occurrence when Iedit mode
-is turned off last time in current buffer is used as occurrence.
-This is intended to recover last Iedit mode which is turned off.
-If region active, Iedit mode is limited within the current
-region.
-
-With repeated universal prefix argument, the occurrence when
-Iedit mode is turned off last time (might be in other buffer) is
-used as occurrence.  If region active, Iedit mode is limited
-within the current region.
+With an universal prefix argument ARG, the occurrence when Iedit mode is
+turned off last time (might be in other buffer) is used as occurrence.
+If region active, Iedit mode is limited within the current region.
 
 With digital prefix argument 1, Iedit mode is limited on the
 current symbol or the active region, which means just one
@@ -384,10 +371,6 @@ Keymap used within overlays:
       ;; Get the occurrence (TYPE . STRING)
       (cond ((and arg
                   (= 4 (prefix-numeric-value arg))
-                  iedit-last-occurrence-local)
-             (setq occurrence iedit-last-occurrence-local))
-            ((and arg
-                  (= 16 (prefix-numeric-value arg))
                   iedit-last-initial-occurrence-global)
              (setq occurrence iedit-last-initial-occurrence-global))
             ((iedit-region-active)
@@ -582,10 +565,9 @@ Return the tag if succeeded, nil if failed."
 Save the current occurrence string locally and globally.  Save
 the initial string globally."
   (setq iedit-last-initial-occurrence-global iedit-initial-occurrence-local)
-  (setq iedit-last-occurrence-local (iedit-current-occurrence))
-  (setq iedit-last-occurrence-global iedit-last-occurrence-local)
-  (if (and iedit-auto-save-occurrence-in-kill-ring iedit-last-occurrence-local)
-      (kill-new (cdr iedit-last-occurrence-local))) ; Make occurrence the latest kill in the kill ring.
+  (setq iedit-last-occurrence-global (iedit-current-occurrence))
+  (if (and iedit-auto-save-occurrence-in-kill-ring iedit-last-occurrence-global)
+      (kill-new (cdr iedit-last-occurrence-global))) ; Make occurrence the latest kill in the kill ring.
   (setq iedit-num-lines-to-expand-up 0)
   (setq iedit-num-lines-to-expand-down 0)
 
@@ -623,7 +605,8 @@ Also restrict it if optional ARG value is 0"
 
 ;;;###autoload
 (defun iedit-execute-last-modification ()
-  "Apply last modification in Iedit mode to the current buffer or an active region."
+  "Apply the modifications from the most recent Iedit session to the
+current buffer or the active region."
   (interactive "*")
   (or (and iedit-last-initial-occurrence-global
            (not (equal iedit-last-initial-occurrence-global iedit-last-occurrence-global)))
@@ -640,14 +623,14 @@ Also restrict it if optional ARG value is 0"
       (setq end (region-end)))
     (perform-replace occurrence-exp replacement t t nil nil nil beg end)))
 
-(defun iedit-apply-global-modification ()
-  "Apply last global modification."
+(defun iedit-apply-last-modification ()
+  "Apply the modifications from the most recent Iedit session to this."
   (interactive "*")
   (if (and iedit-last-initial-occurrence-global
            (equal iedit-initial-occurrence-local iedit-last-initial-occurrence-global)
            (not (equal iedit-last-initial-occurrence-global iedit-last-occurrence-global)))
       (iedit-replace-occurrences (cdr iedit-last-occurrence-global))
-    (message "No global modification available.")))
+    (message "No modification available.")))
 
 (defun iedit-toggle-selection ()
   "Select or deselect the occurrence under point."
