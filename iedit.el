@@ -96,6 +96,9 @@
 ;; Le Wang <l26wang@gmail.com> proposed to match only complete symbols,  not
 ;; inside symbols, contributed rectangle support
 
+;; Pierre Rouleau <prouleau001@gmail.com> added lexical-binding, fixed warnings
+;; and improved docstrings
+
 ;;; Code:
 
 (eval-when-compile
