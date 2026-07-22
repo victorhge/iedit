@@ -380,7 +380,7 @@ Keymap used within overlays:
              (setq occurrence (cons 'selection  (buffer-substring-no-properties
                                 (mark) (point)))))
             (t (setq occurrence (iedit-default-occurrence))
-               (unless occurrence
+               (unless (car occurrence)
                  (error "No candidate of the occurrence, cannot enable Iedit mode"))))
       ;; Get the scope
       (cl-multiple-value-setq (beg end) (iedit--get-scope arg))
