@@ -106,6 +106,7 @@
   (require 'sgml-mode))
 (require 'iedit-lib)
 
+;;;###autoload
 (defcustom iedit-toggle-key-default (kbd "C-;")
   "If non-nil, key is inserted into key maps.
 The key maps are: `global-map', `isearch-mode-map', `esc-map' and `help-map'."
@@ -259,10 +260,11 @@ This is like `describe-bindings', but displays only Iedit keys."
   (length iedit-occurrences-overlays))
 
 ;;; Default key bindings:
+;;;###autoload
 (defun iedit-update-key-bindings (key)
   "Update default KEY bindings."
-  (when (and key (not (eq key
-                          (car (where-is-internal 'iedit-mode)))))
+  (when (and key (not (equal key
+                             (car (where-is-internal 'iedit-mode)))))
     (let ((key-def (lookup-key (current-global-map) key)))
       (if key-def
           (display-warning 'iedit (format "Iedit default key %S is occupied by %s."
@@ -273,8 +275,8 @@ This is like `describe-bindings', but displays only Iedit keys."
         (define-key isearch-mode-map key 'iedit-mode-from-isearch)
         (define-key esc-map key 'iedit-execute-last-modification)
         (define-key help-map key 'iedit-mode-toggle-on-function)))))
-
-(when (and iedit-toggle-key-default (null (where-is-internal 'iedit-mode)))
+;;;###autoload
+(when (and iedit-toggle-key-default (not (where-is-internal 'iedit-mode)))
   (iedit-update-key-bindings iedit-toggle-key-default))
 
 ;; Avoid to restore Iedit mode when restoring desktop
